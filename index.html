@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ศึกผลไม้สุดคิ้วท์ - Cute Fruit Chess (Thai Rules)</title>
+    <title>ศึกผลไม้สุดคิ้วท์ - Cute Fruit Chess (GitHub & GAS Multiplayer)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Sarabun:wght@300;400;600;700&family=Itim&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Itim', 'Sarabun', 'Kanit', sans-serif;
@@ -84,34 +85,44 @@
 
     <!-- ส่วนระบบสมัครสมาชิกและเข้าสู่ระบบ (แสดงก่อนเข้าเกม) -->
     <div id="auth-container" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-orange-900/20 backdrop-blur-md overflow-y-auto">
-        <div class="bg-white/95 rounded-[2.5rem] max-w-md w-full p-8 shadow-2xl border-4 border-orange-200 animate-fade-in text-center relative my-auto">
-            <span class="text-6xl animate-bounce inline-block mb-3">🧺✨</span>
-            <h2 class="text-3xl font-bold text-orange-500 font-['Itim'] mb-1">ลงทะเบียนเข้าสวนผลไม้</h2>
-            <p class="text-xs text-slate-400 font-semibold mb-4">สร้างไอดีผู้เล่นเพื่อเลือกแก๊งและของรางวัล</p>
+        <div class="bg-white/95 rounded-[2.5rem] max-w-md w-full p-6 sm:p-8 shadow-2xl border-4 border-orange-200 animate-fade-in text-center relative my-auto">
+            
+            <!-- ตั้งค่า GAS Web App URL (เพื่อให้ยืดหยุ่นสำหรับผู้ใช้ GitHub) -->
+            <div class="text-left bg-orange-100/40 p-2.5 rounded-2xl border border-orange-200/50 mb-3 text-xs">
+                <span class="block font-bold text-orange-650 mb-1">⚙️ ลิงก์เชื่อมระบบสวนผลไม้คลาวด์ (GAS URL)</span>
+                <input type="text" id="gas-url-input" class="w-full px-3 py-1 rounded-lg bg-white border border-orange-200 focus:outline-none text-[10px] font-mono" placeholder="https://script.google.com/macros/s/.../exec">
+            </div>
+
+            <span class="text-5xl animate-bounce inline-block mb-2">🧺✨</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-orange-500 font-['Itim'] mb-1">ลงทะเบียนเข้าสวนผลไม้</h2>
+            <p class="text-[11px] text-slate-400 font-semibold mb-3">สร้างไอดีบนคลาวด์เพื่อดวลออนไลน์ข้ามแพลตฟอร์ม</p>
 
             <!-- แถบเลือกสลับระหว่าง เข้าสู่ระบบ / สมัครสมาชิก -->
-            <div class="flex bg-orange-50 p-1.5 rounded-full mb-4 border border-orange-100">
-                <button id="tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-2 text-sm font-bold rounded-full bg-orange-400 text-white transition shadow-sm">
+            <div class="flex bg-orange-50 p-1.5 rounded-full mb-3 border border-orange-100">
+                <button id="tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-full bg-orange-400 text-white transition shadow-sm">
                     เข้าสู่ระบบ 🔑
                 </button>
-                <button id="tab-register-btn" onclick="switchAuthTab('register')" class="flex-1 py-2 text-sm font-bold rounded-full text-orange-500 hover:bg-orange-100 transition">
+                <button id="tab-register-btn" onclick="switchAuthTab('register')" class="flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-full text-orange-500 hover:bg-orange-100 transition">
                     สมัครสมาชิก 📝
                 </button>
             </div>
 
             <!-- โหมดการเล่น (Play Mode) -->
-            <div class="bg-orange-50/50 p-3 rounded-2xl border border-orange-100 text-left mb-4">
+            <div class="bg-orange-50/50 p-3 rounded-2xl border border-orange-100 text-left mb-3">
                 <span class="block text-xs font-bold text-orange-600 mb-2 ml-1">🎮 เลือกโหมดการเล่น</span>
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" id="mode-ai-btn" onclick="selectPlayMode('ai')" class="py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1">
+                <div class="grid grid-cols-3 gap-1">
+                    <button type="button" id="mode-ai-btn" onclick="selectPlayMode('ai')" class="py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-[10px] sm:text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1">
                         🤖 สู้กับ AI
                     </button>
-                    <button type="button" id="mode-friend-btn" onclick="selectPlayMode('friend')" class="py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1">
+                    <button type="button" id="mode-friend-btn" onclick="selectPlayMode('friend')" class="py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-[10px] sm:text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1">
                         👥 เล่นสองคน
+                    </button>
+                    <button type="button" id="mode-online-btn" onclick="selectPlayMode('online')" class="py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-[10px] sm:text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1">
+                        🌐 เล่นออนไลน์
                     </button>
                 </div>
 
-                <!-- ตัวเลือกระดับความยาก AI (แสดงเมื่อเลือกโหมด AI เท่านั้น) -->
+                <!-- ตัวเลือกระดับความยาก AI -->
                 <div id="ai-difficulty-container" class="mt-3 pt-2 border-t border-orange-100">
                     <span class="block text-[11px] font-bold text-orange-600 mb-1.5 ml-1">👾 เลือกระดับความยากของ AI</span>
                     <div class="grid grid-cols-3 gap-1.5">
@@ -129,60 +140,60 @@
             </div>
 
             <!-- ฟอร์มเข้าสู่ระบบ (Login Form) -->
-            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-3">
                 <div class="text-left">
                     <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">ชื่อผู้ใช้สุดคิ้วท์</label>
-                    <input type="text" id="login-username" required class="w-full px-4 py-2.5 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-sm" placeholder="ใส่ชื่อผู้ใช้ที่นี่น้า...">
+                    <input type="text" id="login-username" required class="w-full px-4 py-2 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-xs sm:text-sm" placeholder="ใส่ชื่อผู้ใช้ที่นี่น้า...">
                 </div>
                 <div class="text-left">
                     <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">รหัสลับผลไม้</label>
-                    <input type="password" id="login-password" required class="w-full px-4 py-2.5 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-sm" placeholder="ป้อนรหัสผ่านลับ...">
+                    <input type="password" id="login-password" required class="w-full px-4 py-2 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-xs sm:text-sm" placeholder="ป้อนรหัสผ่านลับ...">
                 </div>
-                <button type="submit" class="w-full py-3 bg-orange-400 hover:bg-orange-300 border-b-4 border-orange-500 text-white font-bold rounded-full shadow-lg transition transform active:scale-95 text-sm">
+                <button type="submit" class="w-full py-2.5 bg-orange-400 hover:bg-orange-300 border-b-4 border-orange-500 text-white font-bold rounded-full shadow-lg transition transform active:scale-95 text-xs sm:text-sm">
                     เข้าสู่ระบบเลยยย 🍰
                 </button>
             </form>
 
             <!-- ฟอร์มสมัครสมาชิก (Register Form) -->
-            <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+            <form id="register-form" onsubmit="handleRegister(event)" class="space-y-3 hidden">
                 <div class="text-left">
                     <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">ชื่อผู้ใช้ใหม่</label>
-                    <input type="text" id="reg-username" required class="w-full px-4 py-2.5 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-sm" placeholder="ตั้งชื่อสุดคิ้วท์ของคุณ...">
+                    <input type="text" id="reg-username" required class="w-full px-4 py-2 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-xs sm:text-sm" placeholder="ตั้งชื่อสุดคิ้วท์ของคุณ...">
                 </div>
                 <div class="text-left">
                     <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">ตั้งรหัสลับ</label>
-                    <input type="password" id="reg-password" required class="w-full px-4 py-2.5 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-sm" placeholder="รหัสลับ 4 ตัวขึ้นไปน้า...">
+                    <input type="password" id="reg-password" required class="w-full px-4 py-2 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-xs sm:text-sm" placeholder="รหัสลับ 4 ตัวขึ้นไปน้า...">
                 </div>
                 <!-- เลือกอิโมจิประจำตัว -->
                 <div class="text-left">
                     <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">เลือกอิโมจิประจำตัว</label>
-                    <div class="grid grid-cols-6 gap-2 bg-orange-50/40 p-2 rounded-2xl border border-orange-100">
-                        <button type="button" onclick="selectAvatar('🍓')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm border-orange-400">🍓</button>
-                        <button type="button" onclick="selectAvatar('🍑')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍑</button>
-                        <button type="button" onclick="selectAvatar('🍉')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍉</button>
-                        <button type="button" onclick="selectAvatar('🍋')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍋</button>
-                        <button type="button" onclick="selectAvatar('🍇')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍇</button>
-                        <button type="button" onclick="selectAvatar('🍒')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍒</button>
+                    <div class="grid grid-cols-6 gap-2 bg-orange-50/40 p-1.5 rounded-2xl border border-orange-100">
+                        <button type="button" onclick="selectAvatar('🍓')" class="avatar-option text-xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm border-orange-400">🍓</button>
+                        <button type="button" onclick="selectAvatar('🍑')" class="avatar-option text-xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍑</button>
+                        <button type="button" onclick="selectAvatar('🍉')" class="avatar-option text-xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍉</button>
+                        <button type="button" onclick="selectAvatar('🍋')" class="avatar-option text-xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍋</button>
+                        <button type="button" onclick="selectAvatar('🍇')" class="avatar-option text-xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍇</button>
+                        <button type="button" onclick="selectAvatar('🍒')" class="avatar-option text-xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍒</button>
                     </div>
                 </div>
                 <!-- เลือกทีม -->
                 <div class="text-left">
                     <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">เลือกแก๊งใจโปรด</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button type="button" id="team-peach-btn" onclick="selectTeam('peach')" class="py-2.5 rounded-full border-2 border-pink-400 bg-pink-50 text-pink-600 font-bold text-xs hover:scale-[1.02] transition">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="team-peach-btn" onclick="selectTeam('peach')" class="py-2 rounded-full border-2 border-pink-400 bg-pink-50 text-pink-600 font-bold text-xs hover:scale-[1.02] transition">
                             🍑 แก๊งพีชชมพู
                         </button>
-                        <button type="button" id="team-melon-btn" onclick="selectTeam('melon')" class="py-2.5 rounded-full border-2 border-transparent bg-slate-100 text-slate-500 font-bold text-xs hover:scale-[1.02] transition">
+                        <button type="button" id="team-melon-btn" onclick="selectTeam('melon')" class="py-2 rounded-full border-2 border-transparent bg-slate-100 text-slate-500 font-bold text-xs hover:scale-[1.02] transition">
                             🍈 แก๊งเมลอนเขียว
                         </button>
                     </div>
                 </div>
-                <button type="submit" class="w-full py-3 bg-emerald-400 hover:bg-emerald-350 border-b-4 border-emerald-500 text-white font-bold rounded-full shadow-lg transition transform active:scale-95 text-sm">
+                <button type="submit" class="w-full py-2.5 bg-emerald-400 hover:bg-emerald-350 border-b-4 border-emerald-500 text-white font-bold rounded-full shadow-lg transition transform active:scale-95 text-xs sm:text-sm">
                     สมัครสมาชิกเรียบร้อย ✨
                 </button>
             </form>
 
-            <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex flex-col gap-2 animate-fade-in">
                 <button onclick="playAsGuest()" class="text-xs text-slate-400 font-bold hover:text-orange-500 transition">
                     🌸 เข้าเล่นเป็นผู้เล่นทั่วไป (Guest) 🌸
                 </button>
@@ -191,21 +202,74 @@
         </div>
     </div>
 
-    <!-- ส่วนเนื้อหาหลักของเกม (จะเห็นชัดหลังล็อคอิน) -->
+    <!-- ส่วนล็อบบี้ห้องออนไลน์ (จะสแตนด์บายทำงานเมื่ออยู่ในโหมด Online) -->
+    <div id="lobby-container" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-emerald-900/20 backdrop-blur-md hidden overflow-y-auto">
+        <div class="bg-white/95 rounded-[2.5rem] max-w-lg w-full p-6 shadow-2xl border-4 border-emerald-200 text-center my-auto">
+            <span class="text-5xl animate-bounce inline-block mb-2">🌐✨</span>
+            <h2 class="text-2xl font-bold text-emerald-600 font-['Itim'] mb-1">ล็อบบี้ผลไม้ข้ามคลาวด์</h2>
+            <p class="text-xs text-slate-400 font-semibold mb-4">ค้นหาห้อง ท้าทายแชมป์ผลไม้จากทั่วทุกมุมโลก</p>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="createOnlineRoom()" class="py-2.5 bg-emerald-400 hover:bg-emerald-350 border-b-4 border-emerald-500 text-white font-bold rounded-full text-xs shadow transition duration-150 transform active:scale-95">
+                    🍉 สร้างสวนของคุณเอง
+                </button>
+                <button onclick="refreshLobbyList()" class="py-2.5 bg-slate-300 hover:bg-slate-200 border-b-4 border-slate-400 text-slate-700 font-bold rounded-full text-xs shadow transition duration-150 transform active:scale-95">
+                    🔄 รีเฟรชสวนทั้งหมด
+                </button>
+            </div>
+
+            <div class="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-3 text-left font-semibold">
+                <span class="text-xs font-bold text-emerald-600 block mb-2 ml-1">🏠 สวนที่ว่างพร้อมชิงชัยตอนนี้</span>
+                
+                <div id="room-list-empty" class="text-center py-6 text-slate-400 text-xs font-bold">
+                    ยังไม่มีใครเปิดสวนเลย มาร่วมเปิดคนแรกกันน้า!
+                </div>
+
+                <div id="room-list-wrapper" class="space-y-2 max-h-[180px] overflow-y-auto hidden">
+                    <!-- รายการห้องจะถูกดึงมาลูปตรงนี้ -->
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between font-bold">
+                <button onclick="exitLobby()" class="text-xs text-red-500 hover:underline transition">
+                    ⬅️ ย้อนกลับไปลงทะเบียน
+                </button>
+                <span class="text-[10px] text-slate-450 flex items-center">
+                    เชื่อมต่อคลาวด์ผ่าน GAS API ⚡
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- หน้าจอสถานะรอผู้เล่นคนที่สองในโหมดออนไลน์ -->
+    <div id="wait-player-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-pink-900/10 backdrop-blur-sm hidden animate-fade-in">
+        <div class="bg-white rounded-[2rem] max-w-xs w-full p-6 text-center shadow-xl border-4 border-pink-200">
+            <span class="text-5xl animate-spin inline-block">🌸</span>
+            <h3 class="text-xl font-bold text-pink-500 font-['Itim'] mt-3">กำลังรอคู่ดวลมาจับคู่</h3>
+            <p class="text-xs text-slate-400 font-semibold mt-1">รหัสสวนดวลคิ้วท์ของคุณคือ:</p>
+            <div id="wait-room-id" class="my-3 py-1.5 px-4 bg-pink-50 text-pink-600 font-bold rounded-full text-lg border border-pink-200 select-all tracking-wider font-mono">
+                ROOM-XXXX
+            </div>
+            <button onclick="cancelOnlineRoom()" class="w-full py-2 bg-red-400 hover:bg-red-300 text-white font-bold rounded-full text-xs shadow transition">
+                ถอนสมอ ยกเลิกห้อง ⛵
+            </button>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="w-full max-w-4xl flex justify-between items-center py-3 px-5 bg-white/85 backdrop-blur-md rounded-2xl shadow-lg border-2 border-orange-100 mb-4 transition-all hover:scale-[1.01]">
         <div class="flex items-center gap-3">
             <span class="text-4xl animate-bounce">🍓</span>
             <div>
                 <h1 class="text-2xl font-bold text-orange-500 font-['Itim'] tracking-wide">ศึกผลไม้สุดคิ้วท์ 🍉✨</h1>
-                <p class="text-xs text-emerald-500 font-semibold">หมากรุกไทยในสวนผลไม้พาสเทลแสนหวาน</p>
+                <p class="text-xs text-emerald-500 font-semibold" id="header-subtitle">หมากรุกไทยในสวนผลไม้พาสเทลแสนหวาน</p>
             </div>
         </div>
         <div class="flex gap-2">
             <button onclick="logout()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-600 font-bold rounded-full shadow-sm transition duration-200 text-sm">
                 ออกจากระบบ 🚪
             </button>
-            <button onclick="resetGame()" class="px-4 py-2 bg-orange-400 hover:bg-orange-300 active:scale-95 text-white font-bold rounded-full shadow-md transition duration-200 text-sm border-b-4 border-orange-500">
+            <button id="reset-btn" onclick="resetGame()" class="px-4 py-2 bg-orange-400 hover:bg-orange-300 active:scale-95 text-white font-bold rounded-full shadow-md transition duration-200 text-sm border-b-4 border-orange-500">
                 เริ่มรอบใหม่นะ 🍰
             </button>
             <button onclick="showRules()" class="px-4 py-2 bg-emerald-400 hover:bg-emerald-350 active:scale-95 text-white font-bold rounded-full shadow-md transition duration-200 text-sm border-b-4 border-emerald-500">
@@ -267,7 +331,7 @@
 
     <!-- Footer -->
     <footer class="w-full text-center py-4 text-xs text-slate-500 font-bold mt-4 border-t border-white/50">
-        🍍 ชวนเพื่อนๆ มาท้าดวลในสวนผลไม้สุดคิ้วท์! | กติกาหมากรุกไทยฉบับน่ารัก 100%
+        🍍 ชวนเพื่อนๆ มาท้าดวลในสวนผลไม้สุดคิ้วท์! | กติกาหมากรุกไทยฉบับน่ารัก 100% พร้อมขุมพลังคลาวด์บน GitHub Pages
     </footer>
 
     <!-- มอดัลกติกาและแนะนำผลไม้คิ้วท์ๆ -->
@@ -319,15 +383,18 @@
             <h2 class="text-3xl font-bold text-orange-500 font-['Itim'] mt-4" id="winner-text">แก๊งพีชชมพู ชนะแล้ว!</h2>
             <p class="text-slate-500 font-semibold mt-2" id="winner-subtext">สุดยอดเลย ชนะด้วยความอร่อยและน่ารัก!</p>
             <div class="mt-6">
-                <button onclick="resetGame(); hideGameOver();" class="w-full py-3.5 bg-orange-400 hover:bg-orange-300 border-b-4 border-orange-500 text-white font-bold rounded-full shadow-lg transition transform active:scale-95">
+                <button onclick="handleGameOverRestart()" class="w-full py-3.5 bg-orange-400 hover:bg-orange-300 border-b-4 border-orange-500 text-white font-bold rounded-full shadow-lg transition transform active:scale-95">
                     เล่นอีกรอบนะน้า 🍉
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- ระบบ Logic ของเกมหมากรุกไทยธีมผลไม้พาสเทล -->
+    <!-- โค้ดระบบและ Logic เชื่อมต่อ Google Apps Script API + เกมการเล่น -->
     <script>
+        // ใส่ลิงก์ URL ของ Web App Google Apps Script ที่ได้จากการ Deploy ที่นี่จ้า
+        const HARDCODED_GAS_URL = "https://script.google.com/macros/s/AKfycbxXQ-tVXgru6TF-05L6QmWIda33hq3pL1tG1A2Br0UKrDACZs5ias0zPvPU9aQ2JCVT/exec"; 
+
         const WHITE = 'w';
         const RED = 'r';
 
@@ -341,7 +408,6 @@
             PROMOTED: 'PM'  // พี่องุ่นพวงโต (เบี้ยหงาย)
         };
 
-        // สไตล์สุดคิ้วท์โทนพาสเทลผลไม้สดใส
         const PIECE_STYLES = {
             'wK': { char: '🍉', name: 'แตงโมขาว', sub: 'แตงโม', color: 'bg-[#e2f0d9] text-emerald-800 border-2 border-[#a9d18e] shadow-[0_4px_10px_rgba(169,209,142,0.3)]' },
             'wM': { char: '🍒', name: 'เชอร์รี่ขาว', sub: 'เชอร์รี่', color: 'bg-[#fde2e4] text-[#ff4d6d] border-2 border-[#ffb3c1]' },
@@ -360,26 +426,28 @@
             'rPM': { char: '🍇', name: 'องุ่นแดง', sub: 'พี่องุ่น', color: 'bg-[#f3e5f5] text-[#7b1fa2] border-2 border-[#e1bee7] font-bold' }
         };
 
-        // สถานะระบบสมาชิกในหน่วยความจำชั่วคราว
-        let registeredUsers = [];
-        let loggedInPlayer1 = null; // ข้อมูลผู้เล่นขาว (เมลอน)
-        let loggedInPlayer2 = null; // ข้อมูลผู้เล่นแดง (พีช)
+        // สเตตระบบและการควบคุมฝั่งไคลเอนต์
+        let currentUserProfile = null;
+        let playMode = 'ai'; // 'ai' | 'friend' | 'online'
+        let aiDifficulty = 'medium';
 
-        // ข้อมูลการเชื่อมต่อโหมดการเล่น
-        let playMode = 'ai'; // 'ai' หรือ 'friend'
-        let aiDifficulty = 'medium'; // 'easy', 'medium', 'hard'
-
-        // ข้อมูลตัวเลือกฟอร์มสมัครสมาชิก
         let selectedRegAvatar = '🍓';
         let selectedRegTeam = 'peach'; 
 
+        // ระบบเชื่อมต่อจับคู่ผ่าน GAS URL แบบยืดหยุ่น
+        let activeRoomId = null;
+        let onlineRole = null; // 'w' หรือ 'r'
+        let lobbyPollingTimer = null;
+        let gamePollingTimer = null;
+
+        // สเตตกระดานหมากรุก
         let board = [];
         let currentTurn = WHITE;
         let selectedSquare = null;
         let validMoves = [];
         let capturedPieces = { w: [], r: [] };
 
-        // เล่นเสียงสังเคราะห์โทนเกมน่ารักกุ๊งกิ๊ง 8-bit
+        // โหมดสังเคราะห์คลื่นเสียง 8-bit จังหวะน่ารัก
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             try {
@@ -428,32 +496,96 @@
                         noteOsc.stop(audioCtx.currentTime + (idx * 0.06) + 0.15);
                     });
                 }
-            } catch (e) {
-                // บล็อกเสียงชั่วคราว
+            } catch (e) {}
+        }
+
+        // ดึงที่อยู่ของ GAS Web App URL เพื่อเตรียมยิง API
+        function getGasUrl() {
+            const inputVal = document.getElementById('gas-url-input').value.trim();
+            return inputVal || HARDCODED_GAS_URL;
+        }
+
+        // --- แกนส่งข้อมูล API ของ GAS แบบมีระบบ Retry และ Exponential Backoff ป้องกันล่ม ---
+        async function callGAS(payload) {
+            const url = getGasUrl();
+            if (!url) {
+                showAlert("กรุณากรอกลิงก์ GAS Web App URL ที่ช่องด้านบนก่อนใช้งานจ้า!");
+                throw new Error("Missing GAS Web App URL");
+            }
+
+            let delay = 1000;
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: "POST",
+                        mode: "cors",
+                        redirect: "follow",
+                        headers: {
+                            "Content-Type": "text/plain;charset=utf-8"
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error("Server response not OK");
+                    return await response.json();
+                } catch (error) {
+                    if (i === 4) {
+                        showAlert("เชื่อมต่อกับเซิร์ฟเวอร์สวนคลาวด์ล้มเหลว กรุณาตรวจเช็คอินเทอร์เน็ตน้า");
+                        throw error;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
             }
         }
 
-        // เลือกโหมดการเล่น (สู้ AI หรือเล่นสองคน)
-        function selectPlayMode(mode) {
+        // --- สลับฟอร์ม Auth ในหน้าแรก ---
+        window.switchAuthTab = function(tab) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const loginBtn = document.getElementById('tab-login-btn');
+            const registerBtn = document.getElementById('tab-register-btn');
+            const alertEl = document.getElementById('auth-alert');
+            
+            alertEl.classList.add('hidden');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginBtn.className = "flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-full bg-orange-400 text-white transition shadow-sm";
+                registerBtn.className = "flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-full text-orange-500 hover:bg-orange-100 transition";
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                loginBtn.className = "flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-full text-orange-500 hover:bg-orange-100 transition";
+                registerBtn.className = "flex-1 py-1.5 text-xs sm:text-sm font-bold rounded-full bg-orange-400 text-white transition shadow-sm";
+            }
+        };
+
+        window.selectPlayMode = function(mode) {
             playMode = mode;
             const aiBtn = document.getElementById('mode-ai-btn');
             const friendBtn = document.getElementById('mode-friend-btn');
+            const onlineBtn = document.getElementById('mode-online-btn');
             const diffContainer = document.getElementById('ai-difficulty-container');
 
+            aiBtn.className = "py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-[10px] sm:text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+            friendBtn.className = "py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-[10px] sm:text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+            onlineBtn.className = "py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-[10px] sm:text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+
             if (mode === 'ai') {
-                aiBtn.className = "py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
-                friendBtn.className = "py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+                aiBtn.className = "py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-[10px] sm:text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
                 diffContainer.classList.remove('hidden');
-            } else {
-                aiBtn.className = "py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
-                friendBtn.className = "py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+            } else if (mode === 'friend') {
+                friendBtn.className = "py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-[10px] sm:text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+                diffContainer.classList.add('hidden');
+            } else if (mode === 'online') {
+                onlineBtn.className = "py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-[10px] sm:text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
                 diffContainer.classList.add('hidden');
             }
             playSound('select');
-        }
+        };
 
-        // เลือกระดับความยากของ AI
-        function selectAIDifficulty(diff) {
+        window.selectAIDifficulty = function(diff) {
             aiDifficulty = diff;
             const easyBtn = document.getElementById('diff-easy-btn');
             const medBtn = document.getElementById('diff-medium-btn');
@@ -471,33 +603,9 @@
                 hardBtn.className = "py-1.5 rounded-lg border-2 border-orange-400 bg-white text-orange-500 font-bold text-xs transition";
             }
             playSound('select');
-        }
+        };
 
-        // --- ระบบสลับแท็บ Auth ---
-        function switchAuthTab(tab) {
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            const loginBtn = document.getElementById('tab-login-btn');
-            const registerBtn = document.getElementById('tab-register-btn');
-            const alertEl = document.getElementById('auth-alert');
-            
-            alertEl.classList.add('hidden');
-
-            if (tab === 'login') {
-                loginForm.classList.remove('hidden');
-                registerForm.classList.add('hidden');
-                loginBtn.className = "flex-1 py-2 text-sm font-bold rounded-full bg-orange-400 text-white transition shadow-sm";
-                registerBtn.className = "flex-1 py-2 text-sm font-bold rounded-full text-orange-500 hover:bg-orange-100 transition";
-            } else {
-                loginForm.classList.add('hidden');
-                registerForm.classList.remove('hidden');
-                loginBtn.className = "flex-1 py-2 text-sm font-bold rounded-full text-orange-500 hover:bg-orange-100 transition";
-                registerBtn.className = "flex-1 py-2 text-sm font-bold rounded-full bg-orange-400 text-white transition shadow-sm";
-            }
-        }
-
-        // เลือกรูปภาพประจำตัวในหน้าลงทะเบียน
-        function selectAvatar(avatar) {
+        window.selectAvatar = function(avatar) {
             selectedRegAvatar = avatar;
             const buttons = document.querySelectorAll('.avatar-option');
             buttons.forEach(btn => {
@@ -508,30 +616,37 @@
                 }
             });
             playSound('select');
-        }
+        };
 
-        // เลือกแก๊งทีมโปรดในหน้าลงทะเบียน
-        function selectTeam(team) {
+        window.selectTeam = function(team) {
             selectedRegTeam = team;
             const peachBtn = document.getElementById('team-peach-btn');
             const melonBtn = document.getElementById('team-melon-btn');
 
             if (team === 'peach') {
-                peachBtn.className = "py-2.5 rounded-full border-2 border-pink-400 bg-pink-50 text-pink-600 font-bold text-xs hover:scale-[1.02] transition";
-                melonBtn.className = "py-2.5 rounded-full border-2 border-transparent bg-slate-100 text-slate-500 font-bold text-xs hover:scale-[1.02] transition";
+                peachBtn.className = "py-2 rounded-full border-2 border-pink-400 bg-pink-50 text-pink-600 font-bold text-xs hover:scale-[1.02] transition";
+                melonBtn.className = "py-2 rounded-full border-2 border-transparent bg-slate-100 text-slate-500 font-bold text-xs hover:scale-[1.02] transition";
             } else {
-                peachBtn.className = "py-2.5 rounded-full border-2 border-transparent bg-slate-100 text-slate-500 font-bold text-xs hover:scale-[1.02] transition";
-                melonBtn.className = "py-2.5 rounded-full border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs hover:scale-[1.02] transition";
+                peachBtn.className = "py-2 rounded-full border-2 border-transparent bg-slate-100 text-slate-500 font-bold text-xs hover:scale-[1.02] transition";
+                melonBtn.className = "py-2 rounded-full border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs hover:scale-[1.02] transition";
             }
             playSound('select');
+        };
+
+        function showAlert(msg, isSuccess = false) {
+            const alertEl = document.getElementById('auth-alert');
+            alertEl.className = isSuccess 
+                ? "text-xs font-bold text-emerald-500 mt-1 animate-pulse" 
+                : "text-xs font-bold text-red-500 mt-1 animate-pulse";
+            alertEl.innerText = msg;
+            alertEl.classList.remove('hidden');
         }
 
-        // สมัครสมาชิกใหม่
-        function handleRegister(e) {
+        // --- สิทธิ์ในการลงทะเบียนผ่าน GAS คลาวด์จริง ---
+        window.handleRegister = async function(e) {
             e.preventDefault();
             const usernameInput = document.getElementById('reg-username').value.trim();
             const passwordInput = document.getElementById('reg-password').value;
-            const alertEl = document.getElementById('auth-alert');
 
             if (usernameInput.length < 2) {
                 showAlert("ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 2 ตัวอักษรขึ้นไปนะเมี๊ยว!");
@@ -542,80 +657,101 @@
                 return;
             }
 
-            // ตรวจสอบชื่อซ้ำ
-            const existUser = registeredUsers.find(u => u.username.toLowerCase() === usernameInput.toLowerCase());
-            if (existUser) {
-                showAlert("ชื่อผู้ใช้นี้ถูกจับจองไปเรียบร้อยแล้ว ลองชื่ออื่นดูนะ!");
-                return;
+            showAlert("กำลังส่งข้อมูลขึ้นทะเบียนไปบนคลาวด์...", true);
+
+            try {
+                const res = await callGAS({
+                    action: "register",
+                    username: usernameInput,
+                    password: passwordInput,
+                    avatar: selectedRegAvatar,
+                    team: selectedRegTeam
+                });
+
+                if (res.success) {
+                    showAlert("🎉 สมัครสมาชิกสำเร็จ! ย้ายไปแท็บเข้าสู่ระบบเพื่อเข้าเล่นนะจ๊ะ", true);
+                    document.getElementById('reg-username').value = '';
+                    document.getElementById('reg-password').value = '';
+                    setTimeout(() => {
+                        switchAuthTab('login');
+                        document.getElementById('login-username').value = usernameInput;
+                    }, 1500);
+                } else {
+                    showAlert(res.message || "เกิดข้อผิดพลาดในการลงทะเบียน");
+                }
+            } catch (error) {
+                console.error(error);
             }
+        };
 
-            // เพิ่มไอดีลงฐานข้อมูลชั่วคราว
-            const newUser = {
-                username: usernameInput,
-                password: passwordInput,
-                avatar: selectedRegAvatar,
-                team: selectedRegTeam
-            };
-            registeredUsers.push(newUser);
-
-            // แจ้งเตือนสำเร็จ และ สลับหน้าให้เข้าสู่ระบบ
-            alertEl.className = "text-xs font-bold text-emerald-500 mt-1";
-            alertEl.innerText = "🎉 สมัครสมาชิกสำเร็จแล้ว! ลองนำไอดีไปเข้าสู่ระบบดูนะ";
-            alertEl.classList.remove('hidden');
-
-            // ล้างฟอร์ม
-            document.getElementById('reg-username').value = '';
-            document.getElementById('reg-password').value = '';
-
-            setTimeout(() => {
-                switchAuthTab('login');
-                document.getElementById('login-username').value = newUser.username;
-            }, 1200);
-        }
-
-        // เข้าสู่ระบบ
-        function handleLogin(e) {
+        // --- ล็อกอินออนไลน์ข้ามเครื่อง ---
+        window.handleLogin = async function(e) {
             e.preventDefault();
             const usernameInput = document.getElementById('login-username').value.trim();
             const passwordInput = document.getElementById('login-password').value;
 
-            const user = registeredUsers.find(u => u.username.toLowerCase() === usernameInput.toLowerCase() && u.password === passwordInput);
-            if (!user) {
-                showAlert("❌ ชื่อผู้ใช้หรือรหัสผ่านผลไม้ไม่ถูกต้องจ้า!");
-                return;
-            }
+            showAlert("กำลังเข้าสู่ระบบและเชื่อมโยงสวนคลาวด์...", true);
 
-            if (playMode === 'ai') {
-                loggedInPlayer1 = user;
-                loggedInPlayer2 = { username: `บอทจอมโหด (${getAIDifficultyLabel()})`, avatar: "🤖", team: "peach" };
-            } else {
-                if (user.team === 'melon') {
-                    loggedInPlayer1 = user; 
+            try {
+                const res = await callGAS({
+                    action: "login",
+                    username: usernameInput,
+                    password: passwordInput
+                });
+
+                if (res.success) {
+                    currentUserProfile = res.user;
+                    if (playMode === 'online') {
+                        openOnlineLobby();
+                    } else {
+                        startGameOffline();
+                    }
                 } else {
-                    loggedInPlayer2 = user; 
+                    showAlert(res.message || "ชื่อผู้ใช้หรือรหัสลับไม่ถูกต้อง");
                 }
-
-                // หากเข้ามาเล่นสองคนแต่ยังขาดคู่ซ้อม ให้ตัวตลกร่วมขบวนไปก่อน
-                if (loggedInPlayer1 && !loggedInPlayer2) {
-                    loggedInPlayer2 = { username: "ผู้เล่นรับเชิญ (🍑)", avatar: "🍑", team: "peach" };
-                } else if (!loggedInPlayer1 && loggedInPlayer2) {
-                    loggedInPlayer1 = { username: "ผู้เล่นรับเชิญ (🍈)", avatar: "🍈", team: "melon" };
-                }
+            } catch (error) {
+                console.error(error);
             }
+        };
 
-            startGameWithAuth();
-        }
+        window.playAsGuest = function() {
+            currentUserProfile = {
+                username: "ผู้เล่นทั่วไป_" + Math.floor(1000 + Math.random() * 9000),
+                avatar: "🍉",
+                team: "melon"
+            };
 
-        // เล่นแบบไม่มีไอดี (Guest)
-        function playAsGuest() {
-            if (playMode === 'ai') {
-                loggedInPlayer1 = { username: "ผู้เล่นทั่วไป (🍈)", avatar: "🍈", team: "melon" };
-                loggedInPlayer2 = { username: `บอทจอมโหด (${getAIDifficultyLabel()})`, avatar: "🤖", team: "peach" };
+            if (playMode === 'online') {
+                openOnlineLobby();
             } else {
-                loggedInPlayer1 = { username: "แก๊งเมลอนเขียว", avatar: "🍈", team: "melon" };
-                loggedInPlayer2 = { username: "แก๊งพีชชมพู", avatar: "🍑", team: "peach" };
+                startGameOffline();
             }
-            startGameWithAuth();
+        };
+
+        function startGameOffline() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('lobby-container').classList.add('hidden');
+            document.getElementById('reset-btn').classList.remove('hidden');
+
+            const p1 = currentUserProfile;
+            let p2 = null;
+
+            if (playMode === 'ai') {
+                p2 = { username: `บอทจอมโหด (${getAIDifficultyLabel()})`, avatar: "🤖", team: "peach" };
+            } else {
+                p2 = { username: "ผู้เล่นรับเชิญ (🍑)", avatar: "🍑", team: "peach" };
+            }
+
+            document.getElementById('player-white-name').innerText = p1.username;
+            document.getElementById('player-white-avatar').innerText = p1.avatar;
+
+            document.getElementById('player-red-name').innerText = p2.username;
+            document.getElementById('player-red-avatar').innerText = p2.avatar;
+
+            document.getElementById('header-subtitle').innerText = "หมากรุกไทยในสวนผลไม้พาสเทลแสนหวาน [โหมดออฟไลน์]";
+
+            initBoard();
+            playSound('promote');
         }
 
         function getAIDifficultyLabel() {
@@ -624,78 +760,277 @@
             return 'ระดับยากมาก';
         }
 
-        // โชว์แจ้งเตือน
-        function showAlert(msg) {
-            const alertEl = document.getElementById('auth-alert');
-            alertEl.className = "text-xs font-bold text-red-500 mt-1";
-            alertEl.innerText = msg;
-            alertEl.classList.remove('hidden');
-        }
-
-        // เริ่มเกมพร้อมข้อมูลสมาชิก
-        function startGameWithAuth() {
-            document.getElementById('auth-container').classList.add('hidden');
+        window.logout = function() {
+            // ล้าง Polling ทิ้งทั้งหมดเพื่อประสิทธิภาพการประมวลผล
+            stopLobbyPolling();
+            stopGamePolling();
             
-            // อัปเดตข้อมูลโปรไฟล์ผู้เล่นบนหน้าจอหลัก
-            document.getElementById('player-white-name').innerText = loggedInPlayer1.username;
-            document.getElementById('player-white-avatar').innerText = loggedInPlayer1.avatar;
+            currentUserProfile = null;
+            activeRoomId = null;
+            onlineRole = null;
 
-            document.getElementById('player-red-name').innerText = loggedInPlayer2.username;
-            document.getElementById('player-red-avatar').innerText = loggedInPlayer2.avatar;
-
-            initBoard();
-            playSound('promote');
-        }
-
-        // ออกจากระบบ
-        function logout() {
-            loggedInPlayer1 = null;
-            loggedInPlayer2 = null;
             document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('lobby-container').classList.add('hidden');
+            document.getElementById('wait-player-modal').classList.add('hidden');
             document.getElementById('login-username').value = '';
             document.getElementById('login-password').value = '';
             document.getElementById('auth-alert').classList.add('hidden');
             switchAuthTab('login');
+        };
+
+        // --- ระบบ Multiplayer Online พึ่งพา Polling ทำงานแบบ Realtime บนคลาวด์ ---
+        function openOnlineLobby() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('lobby-container').classList.remove('hidden');
+            refreshLobbyList();
+            startLobbyPolling();
         }
 
+        window.exitLobby = function() {
+            stopLobbyPolling();
+            document.getElementById('lobby-container').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+        };
 
-        // --- ระบบหมากรุกไทยคลาสสิก ---
-        function initBoard() {
-            board = Array(8).fill(null).map(() => Array(8).fill(null));
+        function startLobbyPolling() {
+            stopLobbyPolling();
+            lobbyPollingTimer = setInterval(refreshLobbyList, 4000); // อัปเดตรายการห้องว่างทุก 4 วินาที
+        }
 
-            // แดง (แก๊งพีชชมพู) - แถว 0
-            board[0][0] = { color: RED, type: PIECES.ROOK };
-            board[0][1] = { color: RED, type: PIECES.KNIGHT };
-            board[0][2] = { color: RED, type: PIECES.BISHOP };
-            board[0][3] = { color: RED, type: PIECES.KING };
-            board[0][4] = { color: RED, type: PIECES.QUEEN };
-            board[0][5] = { color: RED, type: PIECES.BISHOP };
-            board[0][6] = { color: RED, type: PIECES.KNIGHT };
-            board[0][7] = { color: RED, type: PIECES.ROOK };
+        function stopLobbyPolling() {
+            if (lobbyPollingTimer) {
+                clearInterval(lobbyPollingTimer);
+                lobbyPollingTimer = null;
+            }
+        }
+
+        window.refreshLobbyList = async function() {
+            const listWrapper = document.getElementById('room-list-wrapper');
+            const emptyEl = document.getElementById('room-list-empty');
+
+            try {
+                const res = await callGAS({ action: "getRooms" });
+                if (res.success) {
+                    const rooms = res.rooms || [];
+                    if (rooms.length === 0) {
+                        listWrapper.classList.add('hidden');
+                        emptyEl.classList.remove('hidden');
+                    } else {
+                        emptyEl.classList.add('hidden');
+                        listWrapper.classList.remove('hidden');
+                        listWrapper.innerHTML = '';
+
+                        rooms.forEach(room => {
+                            const row = document.createElement('div');
+                            row.className = "flex justify-between items-center bg-white p-2 sm:p-2.5 rounded-xl border border-emerald-100 shadow-sm";
+                            row.innerHTML = `
+                                <div class="text-left">
+                                    <span class="text-xs font-bold text-emerald-650 block">🌸 สวนคุณ ${room.p1.username} (${room.p1.avatar})</span>
+                                    <span class="text-[9px] text-slate-400 font-mono">ID: ${room.id}</span>
+                                </div>
+                                <button onclick="joinOnlineRoom('${room.id}')" class="px-3 py-1 bg-emerald-450 hover:bg-emerald-400 text-white font-bold rounded-full text-xs transition duration-150 shadow-sm">
+                                    บุกสวนนี้ ⚔️
+                                </button>
+                            `;
+                            listWrapper.appendChild(row);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Lobby Refresh Error: ", error);
+            }
+        };
+
+        window.createOnlineRoom = async function() {
+            if (!currentUserProfile) return;
+            const newRoomId = "FRUIT-" + Math.floor(1000 + Math.random() * 9000);
+            
+            try {
+                const res = await callGAS({
+                    action: "createRoom",
+                    roomId: newRoomId,
+                    p1: currentUserProfile
+                });
+
+                if (res.success) {
+                    activeRoomId = newRoomId;
+                    onlineRole = WHITE; // คนสร้างห้องเป็นขาว (เมลอน) เสมอ
+
+                    stopLobbyPolling();
+                    document.getElementById('lobby-container').classList.add('hidden');
+                    document.getElementById('wait-room-id').innerText = newRoomId;
+                    document.getElementById('wait-player-modal').classList.remove('hidden');
+
+                    startGamePolling();
+                }
+            } catch (error) {
+                console.error("Create Room Error: ", error);
+            }
+        };
+
+        window.cancelOnlineRoom = async function() {
+            if (!activeRoomId) return;
+            try {
+                await callGAS({
+                    action: "deleteRoom",
+                    roomId: activeRoomId
+                });
+                
+                stopGamePolling();
+                activeRoomId = null;
+                onlineRole = null;
+                document.getElementById('wait-player-modal').classList.add('hidden');
+                document.getElementById('lobby-container').classList.remove('hidden');
+                startLobbyPolling();
+                refreshLobbyList();
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        window.joinOnlineRoom = async function(roomId) {
+            if (!currentUserProfile) return;
+            
+            try {
+                const res = await callGAS({
+                    action: "joinRoom",
+                    roomId: roomId,
+                    p2: currentUserProfile,
+                    boardState: JSON.stringify(generateInitialBoardArray())
+                });
+
+                if (res.success) {
+                    activeRoomId = roomId;
+                    onlineRole = RED; // คนจอยเป็นแดง (พีช)
+
+                    stopLobbyPolling();
+                    document.getElementById('lobby-container').classList.add('hidden');
+                    
+                    startGamePolling();
+                } else {
+                    alert(res.message || "ไม่สามารถเข้าร่วมห้องนี้ได้จ้า");
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        function startGamePolling() {
+            stopGamePolling();
+            // ดึงสถานะกระดานล่าสุดทุก ๆ 2.5 วินาทีเพื่ออัปเดตแบบเรียลไทม์
+            gamePollingTimer = setInterval(pollRoomStatus, 2500); 
+        }
+
+        function stopGamePolling() {
+            if (gamePollingTimer) {
+                clearInterval(gamePollingTimer);
+                gamePollingTimer = null;
+            }
+        }
+
+        async function pollRoomStatus() {
+            if (!activeRoomId) return;
+
+            try {
+                const res = await callGAS({
+                    action: "getRoomStatus",
+                    roomId: activeRoomId
+                });
+
+                if (res.success) {
+                    const room = res.room;
+                    
+                    // กรณีสร้างห้องรอแล้ว มีคนเข้ามาร่วมเล่นเรียบร้อย
+                    if (room.status === 'playing' && document.getElementById('wait-player-modal').classList.contains('hidden') === false) {
+                        document.getElementById('wait-player-modal').classList.add('hidden');
+                    }
+
+                    if (room.status === 'playing') {
+                        document.getElementById('player-white-name').innerText = room.p1.username;
+                        document.getElementById('player-white-avatar').innerText = room.p1.avatar;
+
+                        document.getElementById('player-red-name').innerText = room.p2.username;
+                        document.getElementById('player-red-avatar').innerText = room.p2.avatar;
+
+                        document.getElementById('reset-btn').classList.add('hidden');
+                        document.getElementById('header-subtitle').innerText = `ต่อสู้บนสวนออนไลน์ [ห้อง: ${room.id}]`;
+
+                        // เช็คความเปลี่ยนแปลงของเทิร์นก่อนอัปเดตและเสียง
+                        const previousTurn = currentTurn;
+                        
+                        board = JSON.parse(room.boardState);
+                        currentTurn = room.currentTurn;
+                        capturedPieces.w = room.capturedW || [];
+                        capturedPieces.r = room.capturedR || [];
+
+                        updateUI();
+
+                        // เล่นซาวด์เอฟเฟกต์ตามสถานะการเคลื่อนไหวล่าสุด
+                        if (previousTurn !== currentTurn) {
+                            if (room.lastAction === 'moved') {
+                                playSound('move');
+                            } else if (room.lastAction === 'captured') {
+                                playSound('capture');
+                            } else if (room.lastAction === 'promoted') {
+                                playSound('promote');
+                            }
+                        }
+
+                        checkGameStatus();
+                    }
+                } else {
+                    // หากห้องถูกลบโดยฝั่งตรงข้าม
+                    stopGamePolling();
+                    alert("คู่แข่งออกจากสวนดวลไปแล้วจ้า สวนผลไม้ห้องนี้ถูกปิดตัวลงแล้ว!");
+                    logout();
+                }
+            } catch (error) {
+                console.error("Polling Error: ", error);
+            }
+        }
+
+        // --- ระบบเงื่อนไขกติกาหมากรุกไทยคลาสสิกสุดคิ้วท์ ---
+        function generateInitialBoardArray() {
+            const temp = Array(8).fill(null).map(() => Array(8).fill(null));
+
+            // แก๊งแดงพาสเทล (แก๊งพีชชมพู) - แถว 0
+            temp[0][0] = { color: RED, type: PIECES.ROOK };
+            temp[0][1] = { color: RED, type: PIECES.KNIGHT };
+            temp[0][2] = { color: RED, type: PIECES.BISHOP };
+            temp[0][3] = { color: RED, type: PIECES.KING };
+            temp[0][4] = { color: RED, type: PIECES.QUEEN };
+            temp[0][5] = { color: RED, type: PIECES.BISHOP };
+            temp[0][6] = { color: RED, type: PIECES.KNIGHT };
+            temp[0][7] = { color: RED, type: PIECES.ROOK };
             for (let c = 0; c < 8; c++) {
-                board[2][c] = { color: RED, type: PIECES.PAWN };
+                temp[2][c] = { color: RED, type: PIECES.PAWN };
             }
 
-            // ขาว (แก๊งเมลอนเขียว) - แถว 7
-            board[7][0] = { color: WHITE, type: PIECES.ROOK };
-            board[7][1] = { color: WHITE, type: PIECES.KNIGHT };
-            board[7][2] = { color: WHITE, type: PIECES.BISHOP };
-            board[7][3] = { color: WHITE, type: PIECES.QUEEN };
-            board[7][4] = { color: WHITE, type: PIECES.KING };
-            board[7][5] = { color: WHITE, type: PIECES.BISHOP };
-            board[7][6] = { color: WHITE, type: PIECES.KNIGHT };
-            board[7][7] = { color: WHITE, type: PIECES.ROOK };
+            // แก๊งขาวพาสเทล (แก๊งเมลอนเขียว) - แถว 7
+            temp[7][0] = { color: WHITE, type: PIECES.ROOK };
+            temp[7][1] = { color: WHITE, type: PIECES.KNIGHT };
+            temp[7][2] = { color: WHITE, type: PIECES.BISHOP };
+            temp[7][3] = { color: WHITE, type: PIECES.QUEEN };
+            temp[7][4] = { color: WHITE, type: PIECES.KING };
+            temp[7][5] = { color: WHITE, type: PIECES.BISHOP };
+            temp[7][6] = { color: WHITE, type: PIECES.KNIGHT };
+            temp[7][7] = { color: WHITE, type: PIECES.ROOK };
             for (let c = 0; c < 8; c++) {
-                board[5][c] = { color: WHITE, type: PIECES.PAWN };
+                temp[5][c] = { color: WHITE, type: PIECES.PAWN };
             }
 
+            return temp;
+        }
+
+        window.initBoard = function() {
+            board = generateInitialBoardArray();
             currentTurn = WHITE;
             selectedSquare = null;
             validMoves = [];
             capturedPieces = { w: [], r: [] };
             
             updateUI();
-        }
+        };
 
         function updateUI() {
             const boardEl = document.getElementById('chessboard');
@@ -741,10 +1076,11 @@
                         }
                     }
 
-                    // แสดงตาเดินที่ถูกต้องเมื่อเป็นตาของผู้เล่นปกติ (หรือโหมด 2 คน)
-                    // ป้องกันผู้เล่นไปกดหมากในตาเดินบอท
-                    const canPlayerMove = (playMode !== 'ai' || currentTurn === WHITE);
-                    if (canPlayerMove) {
+                    // ควบคุมสิทธิ์การจับเดินหมาก
+                    const isMyOnlineTurn = (playMode === 'online' && currentTurn === onlineRole);
+                    const isLocalTurn = (playMode !== 'online' && (playMode !== 'ai' || currentTurn === WHITE));
+
+                    if (isMyOnlineTurn || isLocalTurn) {
                         const isValid = validMoves.some(mv => mv.row === r && mv.col === c);
                         if (isValid) {
                             const targetPiece = board[r][c];
@@ -767,19 +1103,31 @@
             const whiteStatus = document.getElementById('white-status');
             const redStatus = document.getElementById('red-status');
 
-            const p1Name = loggedInPlayer1 ? loggedInPlayer1.username : "เมลอนเขียว";
-            const p2Name = loggedInPlayer2 ? loggedInPlayer2.username : "พีชชมพู";
+            const p1Name = document.getElementById('player-white-name').innerText;
+            const p2Name = document.getElementById('player-red-name').innerText;
 
             if (currentTurn === WHITE) {
                 turnInd.innerText = `ตาของ ${p1Name} 🍈✨`;
                 turnInd.className = "absolute -top-3 left-8 px-5 py-1.5 rounded-full text-xs font-bold shadow-md bg-emerald-100 text-emerald-700 border-2 border-emerald-300 animate-bounce";
-                whiteStatus.innerText = "ถึงตาตัวเองแล้วนะ 🍈";
-                redStatus.innerText = playMode === 'ai' ? "บอทกำลังพิจารณาสวน" : "แอบมองฝั่งเมลอนเดิน";
+                
+                if (playMode === 'online') {
+                    whiteStatus.innerText = onlineRole === WHITE ? "ถึงตาของเราเดินแล้วลุยย! 🍈" : "กำลังเฝ้าชมฝั่งตรงข้ามเดินน้า";
+                    redStatus.innerText = onlineRole === RED ? "เป็นตาของคุณขยับหมากรุกจ้า 🍑" : "ฝั่งตรงข้ามกำลังเพ่งมองบอร์ด";
+                } else {
+                    whiteStatus.innerText = "ถึงตาตัวเองแล้วนะ 🍈";
+                    redStatus.innerText = playMode === 'ai' ? "บอทกำลังพิจารณาสวน" : "แอบมองฝั่งเมลอนเดิน";
+                }
             } else {
                 turnInd.innerText = `ตาของ ${p2Name} 🍑✨`;
                 turnInd.className = "absolute -top-3 left-8 px-5 py-1.5 rounded-full text-xs font-bold shadow-md bg-pink-100 text-pink-700 border-2 border-pink-300 animate-bounce";
-                whiteStatus.innerText = playMode === 'ai' ? "ตั้งรับแรงกระแทกจาก AI" : "แอบมองฝั่งพีชเดิน";
-                redStatus.innerText = "ถึงตาตัวเองแล้วนะ 🍑";
+                
+                if (playMode === 'online') {
+                    whiteStatus.innerText = onlineRole === WHITE ? "ฝ่ายตรงข้ามกำลังเดินพาสเทล" : "รอบของเราดวลกล้วยซิ่งแล้ว! 🍈";
+                    redStatus.innerText = onlineRole === RED ? "รอบของคุณเคลื่อนทัพแตงโม 🍑" : "รอฝั่งตรงข้ามพิจารณา";
+                } else {
+                    whiteStatus.innerText = playMode === 'ai' ? "ตั้งรับแรงกระแทกจาก AI" : "ถึงตาตัวเองแล้วนะ 🍑";
+                    redStatus.innerText = "ถึงตาตัวเองแล้วนะ 🍑";
+                }
             }
         }
 
@@ -812,8 +1160,8 @@
         }
 
         function handleSquareClick(row, col) {
-            // ห้ามเดินถ้าไม่ใช่ตาของผู้เล่นในโหมดสู้บอท
             if (playMode === 'ai' && currentTurn === RED) return;
+            if (playMode === 'online' && currentTurn !== onlineRole) return;
 
             const piece = board[row][col];
 
@@ -827,7 +1175,11 @@
 
             const isDestination = validMoves.some(mv => mv.row === row && mv.col === col);
             if (isDestination && selectedSquare) {
-                movePiece(selectedSquare.row, selectedSquare.col, row, col);
+                if (playMode === 'online') {
+                    commitOnlineMove(selectedSquare.row, selectedSquare.col, row, col);
+                } else {
+                    movePiece(selectedSquare.row, selectedSquare.col, row, col);
+                }
                 selectedSquare = null;
                 validMoves = [];
                 updateUI();
@@ -838,6 +1190,70 @@
                 selectedSquare = null;
                 validMoves = [];
                 updateUI();
+            }
+        }
+
+        // --- ทำการยืนยันส่งผลการเดินออนไลน์ไปยังคลาวด์ GAS (RULE 1) ---
+        async function commitOnlineMove(fromRow, fromCol, toRow, toCol) {
+            if (!activeRoomId) return;
+
+            const piece = board[fromRow][fromCol];
+            const target = board[toRow][toCol];
+
+            let newCapturedW = [...capturedPieces.w];
+            let newCapturedR = [...capturedPieces.r];
+            let actionType = 'moved';
+
+            if (target) {
+                if (target.color === WHITE) {
+                    newCapturedW.push(target.type);
+                } else {
+                    newCapturedR.push(target.type);
+                }
+                actionType = 'captured';
+            }
+
+            const boardCopy = JSON.parse(JSON.stringify(board));
+            boardCopy[toRow][toCol] = piece;
+            boardCopy[fromRow][fromCol] = null;
+
+            if (piece.type === PIECES.PAWN) {
+                if (piece.color === WHITE && toRow <= 2) {
+                    boardCopy[toRow][toCol].type = PIECES.PROMOTED;
+                    actionType = 'promoted';
+                } else if (piece.color === RED && toRow >= 5) {
+                    boardCopy[toRow][toCol].type = PIECES.PROMOTED;
+                    actionType = 'promoted';
+                }
+            }
+
+            const nextTurn = currentTurn === WHITE ? RED : WHITE;
+
+            try {
+                await callGAS({
+                    action: "commitMove",
+                    roomId: activeRoomId,
+                    boardState: JSON.stringify(boardCopy),
+                    currentTurn: nextTurn,
+                    capturedW: newCapturedW,
+                    capturedR: newCapturedR,
+                    lastAction: actionType
+                });
+                
+                // คาดคะเนล่วงหน้าในเครื่อง เพื่อความสลวยในการตอบสนอง UI
+                board = boardCopy;
+                currentTurn = nextTurn;
+                capturedPieces.w = newCapturedW;
+                capturedPieces.r = newCapturedR;
+                
+                if (actionType === 'promoted') playSound('promote');
+                else if (actionType === 'captured') playSound('capture');
+                else playSound('move');
+
+                updateUI();
+                checkGameStatus();
+            } catch (error) {
+                console.error("Commit Move Error: ", error);
             }
         }
 
@@ -860,7 +1276,6 @@
             board[toRow][toCol] = piece;
             board[fromRow][fromCol] = null;
 
-            // ตรวจสอบการหงายสตรอว์เบอร์รี่
             if (piece.type === PIECES.PAWN) {
                 if (piece.color === WHITE && toRow <= 2) {
                     piece.type = PIECES.PROMOTED;
@@ -882,18 +1297,16 @@
             checkGameStatus();
             currentTurn = currentTurn === WHITE ? RED : WHITE;
 
-            // ตรวจสอบเพื่อเปิดตาทำงานของ AI
             if (playMode === 'ai' && currentTurn === RED) {
-                setTimeout(triggerAIMove, 650); // ดีเลย์สั้นๆ ให้ดูเป็นธรรมชาติ
+                setTimeout(triggerAIMove, 650);
             }
         }
 
-        // --- ระบบ AI หมากรุกผลไม้ ---
+        // --- ระบบ AI สมองกลผลไม้น่ารักสดใส ---
         function triggerAIMove() {
             const allAIMoves = getAllValidMovesForColor(RED);
 
             if (allAIMoves.length === 0) {
-                // บอทหมดสิทธิ์เดิน (ขุนอับ หรือแพ้ภัยตัวเอง)
                 checkGameStatus();
                 return;
             }
@@ -901,13 +1314,10 @@
             let bestMove = null;
 
             if (aiDifficulty === 'easy') {
-                // โหมดง่าย: เดินแบบสุ่มล้วนๆ
                 bestMove = allAIMoves[Math.floor(Math.random() * allAIMoves.length)];
             } else if (aiDifficulty === 'medium') {
-                // โหมดปานกลาง: คิดล่วงหน้า 1 ตาแบบ Greedy เน้นกินสูงสุด หรือขยับอย่างระมัดระวัง
                 bestMove = getGreedyMove(allAIMoves);
             } else {
-                // โหมดระดับยาก: ใช้อัลกอริทึม Minimax พร้อม Alpha-Beta Pruning (ลึก 2 ชั้น)
                 bestMove = getMinimaxMove(2);
             }
 
@@ -917,7 +1327,6 @@
             }
         }
 
-        // ดึงรายการเดินหมากรุกที่เป็นไปได้ทั้งหมดของฝั่งนั้นๆ
         function getAllValidMovesForColor(color) {
             let moves = [];
             for (let r = 0; r < 8; r++) {
@@ -936,7 +1345,6 @@
             return moves;
         }
 
-        // โหมดปานกลาง - คัดกรองตัวหมากแบบ Greedy
         function getGreedyMove(moves) {
             const PIECE_WEIGHTS = { 'K': 10000, 'R': 500, 'MA': 300, 'KH': 300, 'M': 150, 'PM': 150, 'P': 100 };
             let bestMove = moves[0];
@@ -946,12 +1354,10 @@
                 let score = 0;
                 const target = board[m.to.row][m.to.col];
                 
-                // หากได้กิน ให้เพิ่มแต้มตามน้ำหนักตัวหมาก
                 if (target) {
                     score += (PIECE_WEIGHTS[target.type] || 0) * 1.5;
                 }
 
-                // แกล้งเพิ่มคะแนนสุ่มเบาๆ ให้การเล่นไม่ซ้ำซากจำเจ
                 score += Math.random() * 10;
 
                 if (score > maxScore) {
@@ -963,25 +1369,21 @@
             return bestMove;
         }
 
-        // โหมดระดับยาก - ประมวลผลล่วงหน้าด้วย Minimax (Depth 2)
         function getMinimaxMove(depth) {
             let bestScore = -Infinity;
             let bestMove = null;
             const moves = getAllValidMovesForColor(RED);
 
-            // วนประเมินกิ่งตาเดินแรกทั้งหมด
             for (let i = 0; i < moves.length; i++) {
                 let m = moves[i];
                 let originalSource = board[m.from.row][m.from.col];
                 let originalDest = board[m.to.row][m.to.col];
 
-                // จำลองกระดาน
                 board[m.to.row][m.to.col] = originalSource;
                 board[m.from.row][m.from.col] = null;
 
                 let score = minimax(depth - 1, -Infinity, Infinity, false);
 
-                // ย้อนบอร์ดกลับมาคืนที่เดิม
                 board[m.from.row][m.from.col] = originalSource;
                 board[m.to.row][m.to.col] = originalDest;
 
@@ -994,7 +1396,6 @@
             return bestMove || moves[Math.floor(Math.random() * moves.length)];
         }
 
-        // อัลกอริทึม Minimax พร้อม Alpha-Beta Pruning
         const EVAL_VALUES = { 'K': 10000, 'R': 500, 'MA': 300, 'KH': 300, 'M': 150, 'PM': 150, 'P': 100 };
 
         function evaluateBoard() {
@@ -1004,8 +1405,6 @@
                     let p = board[r][c];
                     if (p) {
                         let val = EVAL_VALUES[p.type] || 0;
-                        
-                        // คะแนนพื้นที่เชิงยุทธศาสตร์: บังคับเบี้ยขึ้นไปลอกคราบ / บังคับขุนให้อยู่ใจกลาง
                         let positionBonus = 0;
                         if (p.type === PIECES.PAWN) {
                             positionBonus = p.color === RED ? r * 15 : (7 - r) * 15;
@@ -1023,7 +1422,6 @@
         }
 
         function minimax(depth, alpha, beta, isMaximizing) {
-            // เช็คว่าราชาแตงโมฝั่งใดตายระหว่างจำลองหรือไม่
             let whiteKingAlive = false;
             let redKingAlive = false;
             for (let r = 0; r < 8; r++) {
@@ -1039,7 +1437,7 @@
             if (!redKingAlive) return -99999;
             if (depth === 0) return evaluateBoard();
 
-            if (isMaximizing) { // RED AI turn
+            if (isMaximizing) {
                 let maxEval = -Infinity;
                 const moves = getAllValidMovesForColor(RED);
                 for (let i = 0; i < moves.length; i++) {
@@ -1060,7 +1458,7 @@
                     if (beta <= alpha) break;
                 }
                 return maxEval;
-            } else { // WHITE Player turn
+            } else {
                 let minEval = Infinity;
                 const moves = getAllValidMovesForColor(WHITE);
                 for (let i = 0; i < moves.length; i++) {
@@ -1084,8 +1482,7 @@
             }
         }
 
-
-        // --- ระบบเงื่อนไขกติกาและสลอตจบเกม ---
+        // --- เช็คสถานะแพ้ชนะของแตงโมยักษ์ ---
         function checkGameStatus() {
             let whiteKingAlive = false;
             let redKingAlive = false;
@@ -1100,8 +1497,8 @@
                 }
             }
 
-            const p1Name = loggedInPlayer1 ? loggedInPlayer1.username : "เมลอนเขียว";
-            const p2Name = loggedInPlayer2 ? loggedInPlayer2.username : "พีชชมพู";
+            const p1Name = document.getElementById('player-white-name').innerText;
+            const p2Name = document.getElementById('player-red-name').innerText;
 
             if (!whiteKingAlive) {
                 showGameOver(`แก๊ง ${p2Name} ชนะการประลอง! 🍑🍿`, `พี่แตงโมขาวของ ${p1Name} ขอกลับไปฟูมฟักตัวเองในดินก่อนนะจ๊ะ`);
@@ -1110,7 +1507,7 @@
             }
         }
 
-        // รับข้อมูลทิศทางการเดินของหมาก
+        // ทิศทางการคำนวณสิทธิ์ตาเดินที่ถูกต้องของหมากแต่ละประเภท
         function getValidMoves(r, c, targetBoard = board) {
             const piece = targetBoard[r][c];
             if (!piece) return [];
@@ -1229,17 +1626,18 @@
             return r >= 0 && r < 8 && c >= 0 && c < 8;
         }
 
-        function resetGame() {
+        window.resetGame = function() {
+            if (playMode === 'online') return;
             initBoard();
-        }
+        };
 
-        function showRules() {
+        window.showRules = function() {
             document.getElementById('rules-modal').classList.remove('hidden');
-        }
+        };
 
-        function hideRules() {
+        window.hideRules = function() {
             document.getElementById('rules-modal').classList.add('hidden');
-        }
+        };
 
         function showGameOver(winnerTitle, descText) {
             document.getElementById('winner-text').innerText = winnerTitle;
@@ -1247,9 +1645,33 @@
             document.getElementById('gameover-modal').classList.remove('hidden');
         }
 
-        function hideGameOver() {
+        window.hideGameOver = function() {
             document.getElementById('gameover-modal').classList.add('hidden');
-        }
+        };
+
+        window.handleGameOverRestart = async function() {
+            hideGameOver();
+            if (playMode === 'online') {
+                if (activeRoomId) {
+                    try {
+                        await callGAS({
+                            action: "deleteRoom",
+                            roomId: activeRoomId
+                        });
+                    } catch (e) {
+                        console.error(e);
+                    }
+                    stopGamePolling();
+                    activeRoomId = null;
+                }
+                openOnlineLobby();
+            } else {
+                initBoard();
+            }
+        };
+
+        // สลับสเตตไปที่ล็อกอินหน้าแรกเป็นลำดับแรกสุด
+        switchAuthTab('login');
     </script>
 </body>
 </html>
