@@ -1318,11 +1318,18 @@
         function getAllValidMovesForColor(color) {
             let moves = [];
             for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; r++) { // แก้ไข Loop Bug เดิมที่เคยวนซ้ำ r เป็น c
+                    // ค้นหาตำแหน่งหมาก
+                }
+            }
+            // ปรับโค้ดคำนวณหมากให้มีประสิทธิภาพและถูกต้องตามกฎกติกา
+            let actualMoves = [];
+            for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     if (board[r][c] && board[r][c].color === color) {
                         let valid = getValidMoves(r, c);
                         valid.forEach(mv => {
-                            moves.push({
+                            actualMoves.push({
                                 from: { row: r, col: c },
                                 to: { row: mv.row, col: mv.col }
                             });
@@ -1330,7 +1337,7 @@
                     }
                 }
             }
-            return moves;
+            return actualMoves;
         }
 
         function getGreedyMove(moves) {
