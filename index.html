@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ศึกผลไม้สุดคิ้วท์ - Cute Fruit Chess (Thai Rules)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&family=Sarabun:wght@300;400;600;700&family=Itim&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Itim', 'Sarabun', 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #fff3e0 0%, #f1f8e9 50%, #e1f5fe 100%);
+        }
+        /* กระดานสไตล์ถาดอบบิสกิต */
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+            grid-template-rows: repeat(8, minmax(0, 1fr));
+            gap: 5px; /* เว้นระยะให้เหมือนช็อกโกแลตแท่ง */
+            padding: 10px;
+        }
+        @media (max-width: 640px) {
+            .board-grid {
+                gap: 3px;
+                padding: 6px;
+            }
+        }
+        /* เอฟเฟกต์เลือกหมากแบบบีบยุบตัวนุ่มๆ */
+        .selected-square {
+            box-shadow: 0 0 0 4px #ff85a1, inset 0 2px 8px rgba(255,112,150,0.4) !important;
+            background-color: #ffe3e8 !important;
+            transform: scale(0.95);
+            transition: all 0.15s ease;
+        }
+        .valid-move {
+            position: relative;
+        }
+        /* ดอกซากุระบอกตาเดินพาสเทล */
+        .valid-move::after {
+            content: '🌸';
+            position: absolute;
+            font-size: 1.4rem;
+            top: 20%;
+            left: 20%;
+            width: 60%;
+            height: 60%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0.85;
+            animation: float 1.2s ease-in-out infinite alternate;
+        }
+        /* หัวใจบอกตาจับกินสุดเลิฟ */
+        .valid-capture::after {
+            content: '💖';
+            position: absolute;
+            font-size: 1.6rem;
+            top: 15%;
+            left: 15%;
+            width: 70%;
+            height: 70%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            animation: heartbeat 0.8s infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-5px) rotate(15deg); }
+        }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.25); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 text-slate-700">
+
+    <!-- ส่วนระบบสมัครสมาชิกและเข้าสู่ระบบ (แสดงก่อนเข้าเกม) -->
+    <div id="auth-container" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-orange-900/20 backdrop-blur-md overflow-y-auto">
+        <div class="bg-white/95 rounded-[2.5rem] max-w-md w-full p-8 shadow-2xl border-4 border-orange-200 animate-fade-in text-center relative my-auto">
+            <span class="text-6xl animate-bounce inline-block mb-3">🧺✨</span>
+            <h2 class="text-3xl font-bold text-orange-500 font-['Itim'] mb-1">ลงทะเบียนเข้าสวนผลไม้</h2>
+            <p class="text-xs text-slate-400 font-semibold mb-4">สร้างไอดีผู้เล่นเพื่อเลือกแก๊งและของรางวัล</p>
+
+            <!-- แถบเลือกสลับระหว่าง เข้าสู่ระบบ / สมัครสมาชิก -->
+            <div class="flex bg-orange-50 p-1.5 rounded-full mb-4 border border-orange-100">
+                <button id="tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-2 text-sm font-bold rounded-full bg-orange-400 text-white transition shadow-sm">
+                    เข้าสู่ระบบ 🔑
+                </button>
+                <button id="tab-register-btn" onclick="switchAuthTab('register')" class="flex-1 py-2 text-sm font-bold rounded-full text-orange-500 hover:bg-orange-100 transition">
+                    สมัครสมาชิก 📝
+                </button>
+            </div>
+
+            <!-- โหมดการเล่น (Play Mode) -->
+            <div class="bg-orange-50/50 p-3 rounded-2xl border border-orange-100 text-left mb-4">
+                <span class="block text-xs font-bold text-orange-600 mb-2 ml-1">🎮 เลือกโหมดการเล่น</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="mode-ai-btn" onclick="selectPlayMode('ai')" class="py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1">
+                        🤖 สู้กับ AI
+                    </button>
+                    <button type="button" id="mode-friend-btn" onclick="selectPlayMode('friend')" class="py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1">
+                        👥 เล่นสองคน
+                    </button>
+                </div>
+
+                <!-- ตัวเลือกระดับความยาก AI (แสดงเมื่อเลือกโหมด AI เท่านั้น) -->
+                <div id="ai-difficulty-container" class="mt-3 pt-2 border-t border-orange-100">
+                    <span class="block text-[11px] font-bold text-orange-600 mb-1.5 ml-1">👾 เลือกระดับความยากของ AI</span>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button type="button" id="diff-easy-btn" onclick="selectAIDifficulty('easy')" class="py-1.5 rounded-lg border bg-white hover:bg-orange-50 text-slate-600 font-bold text-xs transition">
+                            ง่าย 🍓
+                        </button>
+                        <button type="button" id="diff-medium-btn" onclick="selectAIDifficulty('medium')" class="py-1.5 rounded-lg border-2 border-orange-400 bg-white text-orange-500 font-bold text-xs transition">
+                            ปานกลาง 🍍
+                        </button>
+                        <button type="button" id="diff-hard-btn" onclick="selectAIDifficulty('hard')" class="py-1.5 rounded-lg border bg-white hover:bg-orange-50 text-slate-600 font-bold text-xs transition">
+                            ยากมาก 🍉
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ฟอร์มเข้าสู่ระบบ (Login Form) -->
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">ชื่อผู้ใช้สุดคิ้วท์</label>
+                    <input type="text" id="login-username" required class="w-full px-4 py-2.5 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-sm" placeholder="ใส่ชื่อผู้ใช้ที่นี่น้า...">
+                </div>
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">รหัสลับผลไม้</label>
+                    <input type="password" id="login-password" required class="w-full px-4 py-2.5 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-sm" placeholder="ป้อนรหัสผ่านลับ...">
+                </div>
+                <button type="submit" class="w-full py-3 bg-orange-400 hover:bg-orange-300 border-b-4 border-orange-500 text-white font-bold rounded-full shadow-lg transition transform active:scale-95 text-sm">
+                    เข้าสู่ระบบเลยยย 🍰
+                </button>
+            </form>
+
+            <!-- ฟอร์มสมัครสมาชิก (Register Form) -->
+            <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">ชื่อผู้ใช้ใหม่</label>
+                    <input type="text" id="reg-username" required class="w-full px-4 py-2.5 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-sm" placeholder="ตั้งชื่อสุดคิ้วท์ของคุณ...">
+                </div>
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">ตั้งรหัสลับ</label>
+                    <input type="password" id="reg-password" required class="w-full px-4 py-2.5 rounded-full bg-orange-50/50 border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-400 font-semibold text-sm" placeholder="รหัสลับ 4 ตัวขึ้นไปน้า...">
+                </div>
+                <!-- เลือกอิโมจิประจำตัว -->
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">เลือกอิโมจิประจำตัว</label>
+                    <div class="grid grid-cols-6 gap-2 bg-orange-50/40 p-2 rounded-2xl border border-orange-100">
+                        <button type="button" onclick="selectAvatar('🍓')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm border-orange-400">🍓</button>
+                        <button type="button" onclick="selectAvatar('🍑')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍑</button>
+                        <button type="button" onclick="selectAvatar('🍉')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍉</button>
+                        <button type="button" onclick="selectAvatar('🍋')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍋</button>
+                        <button type="button" onclick="selectAvatar('🍇')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍇</button>
+                        <button type="button" onclick="selectAvatar('🍒')" class="avatar-option text-2xl p-1 rounded-xl border-2 border-transparent bg-white hover:scale-110 transition shadow-sm">🍒</button>
+                    </div>
+                </div>
+                <!-- เลือกทีม -->
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-orange-600 mb-1 ml-3">เลือกแก๊งใจโปรด</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" id="team-peach-btn" onclick="selectTeam('peach')" class="py-2.5 rounded-full border-2 border-pink-400 bg-pink-50 text-pink-600 font-bold text-xs hover:scale-[1.02] transition">
+                            🍑 แก๊งพีชชมพู
+                        </button>
+                        <button type="button" id="team-melon-btn" onclick="selectTeam('melon')" class="py-2.5 rounded-full border-2 border-transparent bg-slate-100 text-slate-500 font-bold text-xs hover:scale-[1.02] transition">
+                            🍈 แก๊งเมลอนเขียว
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3 bg-emerald-400 hover:bg-emerald-350 border-b-4 border-emerald-500 text-white font-bold rounded-full shadow-lg transition transform active:scale-95 text-sm">
+                    สมัครสมาชิกเรียบร้อย ✨
+                </button>
+            </form>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                <button onclick="playAsGuest()" class="text-xs text-slate-400 font-bold hover:text-orange-500 transition">
+                    🌸 เข้าเล่นเป็นผู้เล่นทั่วไป (Guest) 🌸
+                </button>
+                <div id="auth-alert" class="text-xs font-bold text-red-500 hidden mt-1"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ส่วนเนื้อหาหลักของเกม (จะเห็นชัดหลังล็อคอิน) -->
+    <!-- Header -->
+    <header class="w-full max-w-4xl flex justify-between items-center py-3 px-5 bg-white/85 backdrop-blur-md rounded-2xl shadow-lg border-2 border-orange-100 mb-4 transition-all hover:scale-[1.01]">
+        <div class="flex items-center gap-3">
+            <span class="text-4xl animate-bounce">🍓</span>
+            <div>
+                <h1 class="text-2xl font-bold text-orange-500 font-['Itim'] tracking-wide">ศึกผลไม้สุดคิ้วท์ 🍉✨</h1>
+                <p class="text-xs text-emerald-500 font-semibold">หมากรุกไทยในสวนผลไม้พาสเทลแสนหวาน</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="logout()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-600 font-bold rounded-full shadow-sm transition duration-200 text-sm">
+                ออกจากระบบ 🚪
+            </button>
+            <button onclick="resetGame()" class="px-4 py-2 bg-orange-400 hover:bg-orange-300 active:scale-95 text-white font-bold rounded-full shadow-md transition duration-200 text-sm border-b-4 border-orange-500">
+                เริ่มรอบใหม่นะ 🍰
+            </button>
+            <button onclick="showRules()" class="px-4 py-2 bg-emerald-400 hover:bg-emerald-350 active:scale-95 text-white font-bold rounded-full shadow-md transition duration-200 text-sm border-b-4 border-emerald-500">
+                พี่ๆ เดินยังไง? 🍍
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="w-full max-w-5xl flex flex-col lg:flex-row items-center justify-center gap-6 my-auto">
+        
+        <!-- ฝ่ายแดงพาสเทล (แก๊งพีชชมพู - Peach Pink Team) -->
+        <div class="flex lg:flex-col items-center justify-between w-full lg:w-56 p-4 bg-white/80 backdrop-blur-md rounded-3xl shadow-md gap-4 border-2 border-pink-200">
+            <div class="flex items-center gap-3">
+                <div id="player-red-avatar" class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-2xl shadow-inner border-2 border-pink-200 animate-pulse">
+                    🍑
+                </div>
+                <div>
+                    <h3 id="player-red-name" class="font-bold text-pink-600 text-lg">แก๊งพีชชมพู</h3>
+                    <p class="text-xs text-pink-400 font-bold" id="red-status">แอบมองเธออยู่นะจ๊ะ</p>
+                </div>
+            </div>
+            <!-- ตัวที่ถูกกิน -->
+            <div class="flex flex-wrap gap-1.5 bg-pink-50/80 p-2.5 rounded-2xl w-full min-h-[55px] border border-pink-100" id="captured-red">
+                <!-- หมากแดงที่โดนกินจะแสดงที่นี่ -->
+            </div>
+        </div>
+
+        <!-- กระดานเบเกอรี่ผลไม้ -->
+        <div class="relative bg-white/80 p-5 rounded-[2.8rem] shadow-xl border-4 border-orange-100/60 backdrop-blur-sm">
+            <!-- ข้อมูลตาเดินปัจจุบัน -->
+            <div class="absolute -top-3 left-8 px-5 py-1.5 rounded-full text-xs font-bold shadow-md transition-all duration-300 border-2 border-orange-150" id="turn-indicator">
+                รอโหลดสวนผลไม้สักครู่นะเมี๊ยว...
+            </div>
+            
+            <div id="chessboard" class="board-grid w-[340px] h-[340px] sm:w-[480px] sm:h-[480px] md:w-[520px] md:h-[520px] border-4 border-orange-100/40 rounded-[2.2rem] overflow-hidden bg-orange-50/30">
+                <!-- ตารางช่องหมากรุกจะถูกสร้างด้วย JS -->
+            </div>
+        </div>
+
+        <!-- ฝ่ายขาวพาสเทล (แก๊งเมลอนเขียว - Green Melon Team) -->
+        <div class="flex lg:flex-col items-center justify-between w-full lg:w-56 p-4 bg-white/80 backdrop-blur-md rounded-3xl shadow-md gap-4 border-2 border-emerald-200">
+            <div class="flex items-center gap-3">
+                <div id="player-white-avatar" class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-2xl shadow-inner border-2 border-emerald-200">
+                    🍈
+                </div>
+                <div>
+                    <h3 id="player-white-name" class="font-bold text-emerald-600 text-lg">แก๊งเมลอนเขียว</h3>
+                    <p class="text-xs text-emerald-400 font-bold" id="white-status">เตรียมตัวลุยสวน!</p>
+                </div>
+            </div>
+            <!-- ตัวที่ถูกกิน -->
+            <div class="flex flex-wrap gap-1.5 bg-emerald-50/80 p-2.5 rounded-2xl w-full min-h-[55px] border border-emerald-100" id="captured-white">
+                <!-- หมากขาวที่โดนกินจะแสดงที่นี่ -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-4 text-xs text-slate-500 font-bold mt-4 border-t border-white/50">
+        🍍 ชวนเพื่อนๆ มาท้าดวลในสวนผลไม้สุดคิ้วท์! | กติกาหมากรุกไทยฉบับน่ารัก 100%
+    </footer>
+
+    <!-- มอดัลกติกาและแนะนำผลไม้คิ้วท์ๆ -->
+    <div id="rules-modal" class="fixed inset-0 bg-orange-900/30 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white/95 text-slate-700 rounded-3xl max-w-lg w-full p-6 shadow-2xl border-4 border-orange-250 max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b-2 border-orange-100 pb-2">
+                <h3 class="text-2xl font-bold text-orange-500 font-['Itim']">คู่มือผลไม้จอมพลัง 🫧</h3>
+                <button onclick="hideRules()" class="text-orange-400 hover:text-orange-650 text-3xl font-bold leading-none">&times;</button>
+            </div>
+            <div class="space-y-4 text-sm font-semibold text-slate-600">
+                <div class="bg-red-50/50 p-2.5 rounded-xl border border-red-100/50">
+                    <strong class="text-red-500 text-base">🍉 แตงโมยักษ์ (ขุน)</strong>
+                    <p class="pl-4 text-slate-500 text-xs mt-0.5">ราชาผลไม้ลูกใหญ่เนื้อแน่น เดินเตาะแตะได้ 8 ทิศรอบตัว ทิศละ 1 ช่อง</p>
+                </div>
+                <div class="bg-yellow-50/50 p-2.5 rounded-xl border border-yellow-100/50">
+                    <strong class="text-yellow-600 text-base">🍍 พี่สับปะรด (โคน)</strong>
+                    <p class="pl-4 text-slate-500 text-xs mt-0.5">พี่ใหญ่ผู้สวมมงกุฎใบสุดแกร่ง เดินแยง 4 ทิศ และย่องตรงไปข้างหน้าได้อีก 1 ช่อง</p>
+                </div>
+                <div class="bg-pink-50/50 p-2.5 rounded-xl border border-pink-100/50">
+                    <strong class="text-pink-500 text-base">🍒 น้องเชอร์รี่ (เม็ด)</strong>
+                    <p class="pl-4 text-slate-500 text-xs mt-0.5">ผลไม้แพ็คคู่ตัวจิ๋ว พริ้วไหวเฉพาะแนวแยงทั้ง 4 ทิศ ทิศละ 1 ช่อง</p>
+                </div>
+                <div class="bg-amber-50/50 p-2.5 rounded-xl border border-amber-100/50">
+                    <strong class="text-amber-500 text-base">🍌 น้องกล้วยซิ่ง (ม้า)</strong>
+                    <p class="pl-4 text-slate-500 text-xs mt-0.5">กล้วยหอมโค้งซิ่งกระโดดข้ามหมากอื่นได้ เดินโค้งเป็นรูปตัว L</p>
+                </div>
+                <div class="bg-sky-50/50 p-2.5 rounded-xl border border-sky-100/50">
+                    <strong class="text-sky-500 text-base">🥥 มะพร้าวซ่า (เรือ)</strong>
+                    <p class="pl-4 text-slate-500 text-xs mt-0.5">มะพร้าวน้ำหอมกลิ้งซิ่งสไลด์แนวตรง (แนวตั้ง/แนวนอน) ได้ไกลสุดขอบสวนเลยนะ!</p>
+                </div>
+                <div class="bg-rose-50/50 p-2.5 rounded-xl border border-rose-100/50">
+                    <strong class="text-rose-500 text-base">🍓 สตรอว์เบอร์รี่จิ๋ว (เบี้ย)</strong>
+                    <p class="pl-4 text-slate-500 text-xs mt-0.5">น้องผลไม้ตัวกระจ้อย เดินตรงข้างหน้า 1 ช่อง และเขยิบกินแนวแยงข้างหน้า</p>
+                    <p class="pl-4 text-orange-500 text-xs mt-1">🧁 ถ้าน้องสตรอว์เบอร์รี่เดินทางไปถึงฝั่งตรงข้าม (แถวที่ 6) จะแปลงร่างเป็น <strong>🍇 พี่องุ่นพวงโต (เบี้ยหงาย)</strong> เริงร่าในแนวแยงเหมือนน้องเชอร์รี่เลย!</p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="hideRules()" class="px-6 py-2.5 bg-orange-400 hover:bg-orange-300 border-b-4 border-orange-500 text-white font-bold rounded-full shadow-md">
+                    เข้าใจแล้วจ้า 🍰
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- มอดัลประกาศผลสุดคิ้วท์ -->
+    <div id="gameover-modal" class="fixed inset-0 bg-orange-900/45 backdrop-blur-md flex items-center justify-center hidden z-50 p-4 animate-fade-in">
+        <div class="bg-white text-slate-700 rounded-[2.5rem] max-w-sm w-full p-8 text-center shadow-2xl border-4 border-orange-300">
+            <span class="text-6xl animate-bounce inline-block">🎉🥳</span>
+            <h2 class="text-3xl font-bold text-orange-500 font-['Itim'] mt-4" id="winner-text">แก๊งพีชชมพู ชนะแล้ว!</h2>
+            <p class="text-slate-500 font-semibold mt-2" id="winner-subtext">สุดยอดเลย ชนะด้วยความอร่อยและน่ารัก!</p>
+            <div class="mt-6">
+                <button onclick="resetGame(); hideGameOver();" class="w-full py-3.5 bg-orange-400 hover:bg-orange-300 border-b-4 border-orange-500 text-white font-bold rounded-full shadow-lg transition transform active:scale-95">
+                    เล่นอีกรอบนะน้า 🍉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ระบบ Logic ของเกมหมากรุกไทยธีมผลไม้พาสเทล -->
+    <script>
+        const WHITE = 'w';
+        const RED = 'r';
+
+        const PIECES = {
+            KING: 'K',      // แตงโมยักษ์ (ขุน)
+            QUEEN: 'M',     // น้องเชอร์รี่ (เม็ด)
+            BISHOP: 'KH',   // พี่สับปะรด (โคน)
+            KNIGHT: 'MA',   // น้องกล้วยซิ่ง (ม้า)
+            ROOK: 'R',      // มะพร้าวซ่า (เรือ)
+            PAWN: 'P',      // สตรอว์เบอร์รี่จิ๋ว (เบี้ย)
+            PROMOTED: 'PM'  // พี่องุ่นพวงโต (เบี้ยหงาย)
+        };
+
+        // สไตล์สุดคิ้วท์โทนพาสเทลผลไม้สดใส
+        const PIECE_STYLES = {
+            'wK': { char: '🍉', name: 'แตงโมขาว', sub: 'แตงโม', color: 'bg-[#e2f0d9] text-emerald-800 border-2 border-[#a9d18e] shadow-[0_4px_10px_rgba(169,209,142,0.3)]' },
+            'wM': { char: '🍒', name: 'เชอร์รี่ขาว', sub: 'เชอร์รี่', color: 'bg-[#fde2e4] text-[#ff4d6d] border-2 border-[#ffb3c1]' },
+            'wKH': { char: '🍍', name: 'สับปะรดขาว', sub: 'สับปะรด', color: 'bg-[#fff2cc] text-amber-800 border-2 border-[#ffd966]' },
+            'wMA': { char: '🍌', name: 'กล้วยขาว', sub: 'น้องกล้วย', color: 'bg-[#fff9db] text-yellow-800 border-2 border-[#ffe066]' },
+            'wR': { char: '🥥', name: 'มะพร้าวขาว', sub: 'มะพร้าว', color: 'bg-[#e3f2fd] text-sky-850 border-2 border-[#9bc2e6]' },
+            'wP': { char: '🍓', name: 'สตรอว์เบอร์รี่ขาว', sub: 'สตรอว์เบอร์รี่', color: 'bg-[#fce4d6] text-[#ff7096] border-2 border-[#f4b183]/60' },
+            'wPM': { char: '🍇', name: 'องุ่นขาว', sub: 'พี่องุ่น', color: 'bg-[#f3e5f5] text-purple-750 border-2 border-purple-300 font-bold' },
+            
+            'rK': { char: '🍉', name: 'แตงโมแดง', sub: 'แตงโม', color: 'bg-[#ffccd5] text-[#c9184a] border-2 border-[#ffb3c1] shadow-[0_4px_10px_rgba(255,179,193,0.4)]' },
+            'rM': { char: '🍒', name: 'เชอร์รี่แดง', sub: 'เชอร์รี่', color: 'bg-[#ffe5ec] text-[#ff4d6d] border-2 border-[#ffb3c1]' },
+            'rKH': { char: '🍍', name: 'สับปะรดแดง', sub: 'สับปะรด', color: 'bg-[#ffe3e0] text-amber-700 border-2 border-[#ffccd5]' },
+            'rMA': { char: '🍌', name: 'กล้วยแดง', sub: 'น้องกล้วย', color: 'bg-[#fffbeb] text-yellow-700 border-2 border-[#fef3c7]' },
+            'rR': { char: '🥥', name: 'มะพร้าวแดง', sub: 'มะพร้าว', color: 'bg-[#f0fdf4] text-emerald-800 border-2 border-[#bbf7d0]' },
+            'rP': { char: '🍓', name: 'สตรอว์เบอร์รี่แดง', sub: 'สตรอว์เบอร์รี่', color: 'bg-[#fff5f5] text-[#ff4d6d] border-2 border-[#feb2b2]' },
+            'rPM': { char: '🍇', name: 'องุ่นแดง', sub: 'พี่องุ่น', color: 'bg-[#f3e5f5] text-[#7b1fa2] border-2 border-[#e1bee7] font-bold' }
+        };
+
+        // สถานะระบบสมาชิกในหน่วยความจำชั่วคราว
+        let registeredUsers = [];
+        let loggedInPlayer1 = null; // ข้อมูลผู้เล่นขาว (เมลอน)
+        let loggedInPlayer2 = null; // ข้อมูลผู้เล่นแดง (พีช)
+
+        // ข้อมูลการเชื่อมต่อโหมดการเล่น
+        let playMode = 'ai'; // 'ai' หรือ 'friend'
+        let aiDifficulty = 'medium'; // 'easy', 'medium', 'hard'
+
+        // ข้อมูลตัวเลือกฟอร์มสมัครสมาชิก
+        let selectedRegAvatar = '🍓';
+        let selectedRegTeam = 'peach'; 
+
+        let board = [];
+        let currentTurn = WHITE;
+        let selectedSquare = null;
+        let validMoves = [];
+        let capturedPieces = { w: [], r: [] };
+
+        // เล่นเสียงสังเคราะห์โทนเกมน่ารักกุ๊งกิ๊ง 8-bit
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'select') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.05);
+                } else if (type === 'move') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(350, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'capture') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(250, audioCtx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.15);
+                } else if (type === 'promote') {
+                    osc.type = 'sine';
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.type = 'sine';
+                        noteOsc.frequency.setValueAtTime(freq, audioCtx.currentTime + (idx * 0.06));
+                        noteGain.gain.setValueAtTime(0.05, audioCtx.currentTime + (idx * 0.06));
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (idx * 0.06) + 0.15);
+                        noteOsc.start(audioCtx.currentTime + (idx * 0.06));
+                        noteOsc.stop(audioCtx.currentTime + (idx * 0.06) + 0.15);
+                    });
+                }
+            } catch (e) {
+                // บล็อกเสียงชั่วคราว
+            }
+        }
+
+        // เลือกโหมดการเล่น (สู้ AI หรือเล่นสองคน)
+        function selectPlayMode(mode) {
+            playMode = mode;
+            const aiBtn = document.getElementById('mode-ai-btn');
+            const friendBtn = document.getElementById('mode-friend-btn');
+            const diffContainer = document.getElementById('ai-difficulty-container');
+
+            if (mode === 'ai') {
+                aiBtn.className = "py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+                friendBtn.className = "py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+                diffContainer.classList.remove('hidden');
+            } else {
+                aiBtn.className = "py-2 rounded-xl border-2 border-transparent bg-orange-100/50 text-slate-500 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+                friendBtn.className = "py-2 rounded-xl border-2 border-orange-400 bg-white text-orange-600 font-bold text-xs hover:scale-[1.02] transition flex items-center justify-center gap-1";
+                diffContainer.classList.add('hidden');
+            }
+            playSound('select');
+        }
+
+        // เลือกระดับความยากของ AI
+        function selectAIDifficulty(diff) {
+            aiDifficulty = diff;
+            const easyBtn = document.getElementById('diff-easy-btn');
+            const medBtn = document.getElementById('diff-medium-btn');
+            const hardBtn = document.getElementById('diff-hard-btn');
+
+            easyBtn.className = "py-1.5 rounded-lg border bg-white hover:bg-orange-50 text-slate-600 font-bold text-xs transition";
+            medBtn.className = "py-1.5 rounded-lg border bg-white hover:bg-orange-50 text-slate-600 font-bold text-xs transition";
+            hardBtn.className = "py-1.5 rounded-lg border bg-white hover:bg-orange-50 text-slate-600 font-bold text-xs transition";
+
+            if (diff === 'easy') {
+                easyBtn.className = "py-1.5 rounded-lg border-2 border-orange-400 bg-white text-orange-500 font-bold text-xs transition";
+            } else if (diff === 'medium') {
+                medBtn.className = "py-1.5 rounded-lg border-2 border-orange-400 bg-white text-orange-500 font-bold text-xs transition";
+            } else {
+                hardBtn.className = "py-1.5 rounded-lg border-2 border-orange-400 bg-white text-orange-500 font-bold text-xs transition";
+            }
+            playSound('select');
+        }
+
+        // --- ระบบสลับแท็บ Auth ---
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const loginBtn = document.getElementById('tab-login-btn');
+            const registerBtn = document.getElementById('tab-register-btn');
+            const alertEl = document.getElementById('auth-alert');
+            
+            alertEl.classList.add('hidden');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginBtn.className = "flex-1 py-2 text-sm font-bold rounded-full bg-orange-400 text-white transition shadow-sm";
+                registerBtn.className = "flex-1 py-2 text-sm font-bold rounded-full text-orange-500 hover:bg-orange-100 transition";
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                loginBtn.className = "flex-1 py-2 text-sm font-bold rounded-full text-orange-500 hover:bg-orange-100 transition";
+                registerBtn.className = "flex-1 py-2 text-sm font-bold rounded-full bg-orange-400 text-white transition shadow-sm";
+            }
+        }
+
+        // เลือกรูปภาพประจำตัวในหน้าลงทะเบียน
+        function selectAvatar(avatar) {
+            selectedRegAvatar = avatar;
+            const buttons = document.querySelectorAll('.avatar-option');
+            buttons.forEach(btn => {
+                if (btn.innerText === avatar) {
+                    btn.classList.add('border-orange-400');
+                } else {
+                    btn.classList.remove('border-orange-400');
+                }
+            });
+            playSound('select');
+        }
+
+        // เลือกแก๊งทีมโปรดในหน้าลงทะเบียน
+        function selectTeam(team) {
+            selectedRegTeam = team;
+            const peachBtn = document.getElementById('team-peach-btn');
+            const melonBtn = document.getElementById('team-melon-btn');
+
+            if (team === 'peach') {
+                peachBtn.className = "py-2.5 rounded-full border-2 border-pink-400 bg-pink-50 text-pink-600 font-bold text-xs hover:scale-[1.02] transition";
+                melonBtn.className = "py-2.5 rounded-full border-2 border-transparent bg-slate-100 text-slate-500 font-bold text-xs hover:scale-[1.02] transition";
+            } else {
+                peachBtn.className = "py-2.5 rounded-full border-2 border-transparent bg-slate-100 text-slate-500 font-bold text-xs hover:scale-[1.02] transition";
+                melonBtn.className = "py-2.5 rounded-full border-2 border-emerald-400 bg-emerald-50 text-emerald-600 font-bold text-xs hover:scale-[1.02] transition";
+            }
+            playSound('select');
+        }
+
+        // สมัครสมาชิกใหม่
+        function handleRegister(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('reg-username').value.trim();
+            const passwordInput = document.getElementById('reg-password').value;
+            const alertEl = document.getElementById('auth-alert');
+
+            if (usernameInput.length < 2) {
+                showAlert("ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 2 ตัวอักษรขึ้นไปนะเมี๊ยว!");
+                return;
+            }
+            if (passwordInput.length < 4) {
+                showAlert("รหัสผ่านต้องมี 4 ตัวอักษรขึ้นไปนะเมี๊ยว!");
+                return;
+            }
+
+            // ตรวจสอบชื่อซ้ำ
+            const existUser = registeredUsers.find(u => u.username.toLowerCase() === usernameInput.toLowerCase());
+            if (existUser) {
+                showAlert("ชื่อผู้ใช้นี้ถูกจับจองไปเรียบร้อยแล้ว ลองชื่ออื่นดูนะ!");
+                return;
+            }
+
+            // เพิ่มไอดีลงฐานข้อมูลชั่วคราว
+            const newUser = {
+                username: usernameInput,
+                password: passwordInput,
+                avatar: selectedRegAvatar,
+                team: selectedRegTeam
+            };
+            registeredUsers.push(newUser);
+
+            // แจ้งเตือนสำเร็จ และ สลับหน้าให้เข้าสู่ระบบ
+            alertEl.className = "text-xs font-bold text-emerald-500 mt-1";
+            alertEl.innerText = "🎉 สมัครสมาชิกสำเร็จแล้ว! ลองนำไอดีไปเข้าสู่ระบบดูนะ";
+            alertEl.classList.remove('hidden');
+
+            // ล้างฟอร์ม
+            document.getElementById('reg-username').value = '';
+            document.getElementById('reg-password').value = '';
+
+            setTimeout(() => {
+                switchAuthTab('login');
+                document.getElementById('login-username').value = newUser.username;
+            }, 1200);
+        }
+
+        // เข้าสู่ระบบ
+        function handleLogin(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const passwordInput = document.getElementById('login-password').value;
+
+            const user = registeredUsers.find(u => u.username.toLowerCase() === usernameInput.toLowerCase() && u.password === passwordInput);
+            if (!user) {
+                showAlert("❌ ชื่อผู้ใช้หรือรหัสผ่านผลไม้ไม่ถูกต้องจ้า!");
+                return;
+            }
+
+            if (playMode === 'ai') {
+                loggedInPlayer1 = user;
+                loggedInPlayer2 = { username: `บอทจอมโหด (${getAIDifficultyLabel()})`, avatar: "🤖", team: "peach" };
+            } else {
+                if (user.team === 'melon') {
+                    loggedInPlayer1 = user; 
+                } else {
+                    loggedInPlayer2 = user; 
+                }
+
+                // หากเข้ามาเล่นสองคนแต่ยังขาดคู่ซ้อม ให้ตัวตลกร่วมขบวนไปก่อน
+                if (loggedInPlayer1 && !loggedInPlayer2) {
+                    loggedInPlayer2 = { username: "ผู้เล่นรับเชิญ (🍑)", avatar: "🍑", team: "peach" };
+                } else if (!loggedInPlayer1 && loggedInPlayer2) {
+                    loggedInPlayer1 = { username: "ผู้เล่นรับเชิญ (🍈)", avatar: "🍈", team: "melon" };
+                }
+            }
+
+            startGameWithAuth();
+        }
+
+        // เล่นแบบไม่มีไอดี (Guest)
+        function playAsGuest() {
+            if (playMode === 'ai') {
+                loggedInPlayer1 = { username: "ผู้เล่นทั่วไป (🍈)", avatar: "🍈", team: "melon" };
+                loggedInPlayer2 = { username: `บอทจอมโหด (${getAIDifficultyLabel()})`, avatar: "🤖", team: "peach" };
+            } else {
+                loggedInPlayer1 = { username: "แก๊งเมลอนเขียว", avatar: "🍈", team: "melon" };
+                loggedInPlayer2 = { username: "แก๊งพีชชมพู", avatar: "🍑", team: "peach" };
+            }
+            startGameWithAuth();
+        }
+
+        function getAIDifficultyLabel() {
+            if (aiDifficulty === 'easy') return 'ระดับง่าย';
+            if (aiDifficulty === 'medium') return 'ระดับกลาง';
+            return 'ระดับยากมาก';
+        }
+
+        // โชว์แจ้งเตือน
+        function showAlert(msg) {
+            const alertEl = document.getElementById('auth-alert');
+            alertEl.className = "text-xs font-bold text-red-500 mt-1";
+            alertEl.innerText = msg;
+            alertEl.classList.remove('hidden');
+        }
+
+        // เริ่มเกมพร้อมข้อมูลสมาชิก
+        function startGameWithAuth() {
+            document.getElementById('auth-container').classList.add('hidden');
+            
+            // อัปเดตข้อมูลโปรไฟล์ผู้เล่นบนหน้าจอหลัก
+            document.getElementById('player-white-name').innerText = loggedInPlayer1.username;
+            document.getElementById('player-white-avatar').innerText = loggedInPlayer1.avatar;
+
+            document.getElementById('player-red-name').innerText = loggedInPlayer2.username;
+            document.getElementById('player-red-avatar').innerText = loggedInPlayer2.avatar;
+
+            initBoard();
+            playSound('promote');
+        }
+
+        // ออกจากระบบ
+        function logout() {
+            loggedInPlayer1 = null;
+            loggedInPlayer2 = null;
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('auth-alert').classList.add('hidden');
+            switchAuthTab('login');
+        }
+
+
+        // --- ระบบหมากรุกไทยคลาสสิก ---
+        function initBoard() {
+            board = Array(8).fill(null).map(() => Array(8).fill(null));
+
+            // แดง (แก๊งพีชชมพู) - แถว 0
+            board[0][0] = { color: RED, type: PIECES.ROOK };
+            board[0][1] = { color: RED, type: PIECES.KNIGHT };
+            board[0][2] = { color: RED, type: PIECES.BISHOP };
+            board[0][3] = { color: RED, type: PIECES.KING };
+            board[0][4] = { color: RED, type: PIECES.QUEEN };
+            board[0][5] = { color: RED, type: PIECES.BISHOP };
+            board[0][6] = { color: RED, type: PIECES.KNIGHT };
+            board[0][7] = { color: RED, type: PIECES.ROOK };
+            for (let c = 0; c < 8; c++) {
+                board[2][c] = { color: RED, type: PIECES.PAWN };
+            }
+
+            // ขาว (แก๊งเมลอนเขียว) - แถว 7
+            board[7][0] = { color: WHITE, type: PIECES.ROOK };
+            board[7][1] = { color: WHITE, type: PIECES.KNIGHT };
+            board[7][2] = { color: WHITE, type: PIECES.BISHOP };
+            board[7][3] = { color: WHITE, type: PIECES.QUEEN };
+            board[7][4] = { color: WHITE, type: PIECES.KING };
+            board[7][5] = { color: WHITE, type: PIECES.BISHOP };
+            board[7][6] = { color: WHITE, type: PIECES.KNIGHT };
+            board[7][7] = { color: WHITE, type: PIECES.ROOK };
+            for (let c = 0; c < 8; c++) {
+                board[5][c] = { color: WHITE, type: PIECES.PAWN };
+            }
+
+            currentTurn = WHITE;
+            selectedSquare = null;
+            validMoves = [];
+            capturedPieces = { w: [], r: [] };
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            const boardEl = document.getElementById('chessboard');
+            boardEl.innerHTML = '';
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const square = document.createElement('div');
+                    square.dataset.row = r;
+                    square.dataset.col = c;
+
+                    const isDark = (r + c) % 2 === 1;
+                    square.className = `flex items-center justify-center relative cursor-pointer select-none transition-all duration-150 ${
+                        isDark 
+                        ? 'bg-[#ffeef2] border-b-[4px] border-r-[2px] border-[#fbc4ce] text-slate-600 rounded-xl sm:rounded-2xl shadow-[inset_0_-2px_4px_rgba(0,0,0,0.02)]' 
+                        : 'bg-[#fffbf2] border-b-[4px] border-r-[2px] border-[#f4e3b1] text-slate-700 rounded-xl sm:rounded-2xl shadow-[inset_0_-2px_4px_rgba(0,0,0,0.02)]'
+                    }`;
+
+                    if (selectedSquare && selectedSquare.row === r && selectedSquare.col === c) {
+                        square.classList.add('selected-square');
+                    }
+
+                    const piece = board[r][c];
+                    if (piece) {
+                        const styleKey = piece.color + piece.type;
+                        const style = PIECE_STYLES[styleKey];
+                        
+                        if (style) {
+                            const pieceEl = document.createElement('div');
+                            pieceEl.className = `flex flex-col items-center justify-center rounded-full font-bold shadow-md cursor-pointer transform hover:scale-110 active:scale-90 transition-transform duration-100 w-[84%] h-[84%] ${style.color}`;
+                            
+                            const emojiEl = document.createElement('span');
+                            emojiEl.className = 'text-2xl sm:text-3xl leading-none';
+                            emojiEl.innerText = style.char;
+
+                            const nameEl = document.createElement('span');
+                            nameEl.className = 'text-[8px] sm:text-[9px] font-bold leading-none mt-0.5 opacity-90 font-["Itim"]';
+                            nameEl.innerText = style.sub;
+
+                            pieceEl.appendChild(emojiEl);
+                            pieceEl.appendChild(nameEl);
+                            square.appendChild(pieceEl);
+                        }
+                    }
+
+                    // แสดงตาเดินที่ถูกต้องเมื่อเป็นตาของผู้เล่นปกติ (หรือโหมด 2 คน)
+                    // ป้องกันผู้เล่นไปกดหมากในตาเดินบอท
+                    const canPlayerMove = (playMode !== 'ai' || currentTurn === WHITE);
+                    if (canPlayerMove) {
+                        const isValid = validMoves.some(mv => mv.row === r && mv.col === c);
+                        if (isValid) {
+                            const targetPiece = board[r][c];
+                            if (targetPiece) {
+                                square.classList.add('valid-capture');
+                            } else {
+                                square.classList.add('valid-move');
+                            }
+                        }
+                    }
+
+                    square.addEventListener('click', () => handleSquareClick(r, c));
+                    boardEl.appendChild(square);
+                }
+            }
+
+            renderCapturedPieces();
+
+            const turnInd = document.getElementById('turn-indicator');
+            const whiteStatus = document.getElementById('white-status');
+            const redStatus = document.getElementById('red-status');
+
+            const p1Name = loggedInPlayer1 ? loggedInPlayer1.username : "เมลอนเขียว";
+            const p2Name = loggedInPlayer2 ? loggedInPlayer2.username : "พีชชมพู";
+
+            if (currentTurn === WHITE) {
+                turnInd.innerText = `ตาของ ${p1Name} 🍈✨`;
+                turnInd.className = "absolute -top-3 left-8 px-5 py-1.5 rounded-full text-xs font-bold shadow-md bg-emerald-100 text-emerald-700 border-2 border-emerald-300 animate-bounce";
+                whiteStatus.innerText = "ถึงตาตัวเองแล้วนะ 🍈";
+                redStatus.innerText = playMode === 'ai' ? "บอทกำลังพิจารณาสวน" : "แอบมองฝั่งเมลอนเดิน";
+            } else {
+                turnInd.innerText = `ตาของ ${p2Name} 🍑✨`;
+                turnInd.className = "absolute -top-3 left-8 px-5 py-1.5 rounded-full text-xs font-bold shadow-md bg-pink-100 text-pink-700 border-2 border-pink-300 animate-bounce";
+                whiteStatus.innerText = playMode === 'ai' ? "ตั้งรับแรงกระแทกจาก AI" : "แอบมองฝั่งพีชเดิน";
+                redStatus.innerText = "ถึงตาตัวเองแล้วนะ 🍑";
+            }
+        }
+
+        function renderCapturedPieces() {
+            const capWhiteEl = document.getElementById('captured-white');
+            const capRedEl = document.getElementById('captured-red');
+
+            capWhiteEl.innerHTML = '';
+            capRedEl.innerHTML = '';
+
+            capturedPieces.r.forEach(p => {
+                const style = PIECE_STYLES['r' + p];
+                if (style) {
+                    const tag = document.createElement('span');
+                    tag.className = "px-1.5 py-0.5 text-xs font-bold rounded-full bg-pink-100 text-[#ff4d6d] border border-pink-200 flex items-center gap-0.5 scale-95 shadow-sm font-['Itim']";
+                    tag.innerHTML = `<span>${style.char}</span><span class="text-[8px]">${style.sub}</span>`;
+                    capWhiteEl.appendChild(tag);
+                }
+            });
+
+            capturedPieces.w.forEach(p => {
+                const style = PIECE_STYLES['w' + p];
+                if (style) {
+                    const tag = document.createElement('span');
+                    tag.className = "px-1.5 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center gap-0.5 scale-95 shadow-sm font-['Itim']";
+                    tag.innerHTML = `<span>${style.char}</span><span class="text-[8px]">${style.sub}</span>`;
+                    capRedEl.appendChild(tag);
+                }
+            });
+        }
+
+        function handleSquareClick(row, col) {
+            // ห้ามเดินถ้าไม่ใช่ตาของผู้เล่นในโหมดสู้บอท
+            if (playMode === 'ai' && currentTurn === RED) return;
+
+            const piece = board[row][col];
+
+            if (piece && piece.color === currentTurn) {
+                selectedSquare = { row, col };
+                validMoves = getValidMoves(row, col);
+                playSound('select');
+                updateUI();
+                return;
+            }
+
+            const isDestination = validMoves.some(mv => mv.row === row && mv.col === col);
+            if (isDestination && selectedSquare) {
+                movePiece(selectedSquare.row, selectedSquare.col, row, col);
+                selectedSquare = null;
+                validMoves = [];
+                updateUI();
+                return;
+            }
+
+            if (selectedSquare) {
+                selectedSquare = null;
+                validMoves = [];
+                updateUI();
+            }
+        }
+
+        function movePiece(fromRow, fromCol, toRow, toCol) {
+            const piece = board[fromRow][fromCol];
+            const target = board[toRow][toCol];
+
+            let isCapture = false;
+            let isPromotion = false;
+
+            if (target) {
+                if (target.color === WHITE) {
+                    capturedPieces.w.push(target.type);
+                } else {
+                    capturedPieces.r.push(target.type);
+                }
+                isCapture = true;
+            }
+
+            board[toRow][toCol] = piece;
+            board[fromRow][fromCol] = null;
+
+            // ตรวจสอบการหงายสตรอว์เบอร์รี่
+            if (piece.type === PIECES.PAWN) {
+                if (piece.color === WHITE && toRow <= 2) {
+                    piece.type = PIECES.PROMOTED;
+                    isPromotion = true;
+                } else if (piece.color === RED && toRow >= 5) {
+                    piece.type = PIECES.PROMOTED;
+                    isPromotion = true;
+                }
+            }
+
+            if (isPromotion) {
+                playSound('promote');
+            } else if (isCapture) {
+                playSound('capture');
+            } else {
+                playSound('move');
+            }
+
+            checkGameStatus();
+            currentTurn = currentTurn === WHITE ? RED : WHITE;
+
+            // ตรวจสอบเพื่อเปิดตาทำงานของ AI
+            if (playMode === 'ai' && currentTurn === RED) {
+                setTimeout(triggerAIMove, 650); // ดีเลย์สั้นๆ ให้ดูเป็นธรรมชาติ
+            }
+        }
+
+        // --- ระบบ AI หมากรุกผลไม้ ---
+        function triggerAIMove() {
+            const allAIMoves = getAllValidMovesForColor(RED);
+
+            if (allAIMoves.length === 0) {
+                // บอทหมดสิทธิ์เดิน (ขุนอับ หรือแพ้ภัยตัวเอง)
+                checkGameStatus();
+                return;
+            }
+
+            let bestMove = null;
+
+            if (aiDifficulty === 'easy') {
+                // โหมดง่าย: เดินแบบสุ่มล้วนๆ
+                bestMove = allAIMoves[Math.floor(Math.random() * allAIMoves.length)];
+            } else if (aiDifficulty === 'medium') {
+                // โหมดปานกลาง: คิดล่วงหน้า 1 ตาแบบ Greedy เน้นกินสูงสุด หรือขยับอย่างระมัดระวัง
+                bestMove = getGreedyMove(allAIMoves);
+            } else {
+                // โหมดระดับยาก: ใช้อัลกอริทึม Minimax พร้อม Alpha-Beta Pruning (ลึก 2 ชั้น)
+                bestMove = getMinimaxMove(2);
+            }
+
+            if (bestMove) {
+                movePiece(bestMove.from.row, bestMove.from.col, bestMove.to.row, bestMove.to.col);
+                updateUI();
+            }
+        }
+
+        // ดึงรายการเดินหมากรุกที่เป็นไปได้ทั้งหมดของฝั่งนั้นๆ
+        function getAllValidMovesForColor(color) {
+            let moves = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (board[r][c] && board[r][c].color === color) {
+                        let valid = getValidMoves(r, c);
+                        valid.forEach(mv => {
+                            moves.push({
+                                from: { row: r, col: c },
+                                to: { row: mv.row, col: mv.col }
+                            });
+                        });
+                    }
+                }
+            }
+            return moves;
+        }
+
+        // โหมดปานกลาง - คัดกรองตัวหมากแบบ Greedy
+        function getGreedyMove(moves) {
+            const PIECE_WEIGHTS = { 'K': 10000, 'R': 500, 'MA': 300, 'KH': 300, 'M': 150, 'PM': 150, 'P': 100 };
+            let bestMove = moves[0];
+            let maxScore = -99999;
+
+            moves.forEach(m => {
+                let score = 0;
+                const target = board[m.to.row][m.to.col];
+                
+                // หากได้กิน ให้เพิ่มแต้มตามน้ำหนักตัวหมาก
+                if (target) {
+                    score += (PIECE_WEIGHTS[target.type] || 0) * 1.5;
+                }
+
+                // แกล้งเพิ่มคะแนนสุ่มเบาๆ ให้การเล่นไม่ซ้ำซากจำเจ
+                score += Math.random() * 10;
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestMove = m;
+                }
+            });
+
+            return bestMove;
+        }
+
+        // โหมดระดับยาก - ประมวลผลล่วงหน้าด้วย Minimax (Depth 2)
+        function getMinimaxMove(depth) {
+            let bestScore = -Infinity;
+            let bestMove = null;
+            const moves = getAllValidMovesForColor(RED);
+
+            // วนประเมินกิ่งตาเดินแรกทั้งหมด
+            for (let i = 0; i < moves.length; i++) {
+                let m = moves[i];
+                let originalSource = board[m.from.row][m.from.col];
+                let originalDest = board[m.to.row][m.to.col];
+
+                // จำลองกระดาน
+                board[m.to.row][m.to.col] = originalSource;
+                board[m.from.row][m.from.col] = null;
+
+                let score = minimax(depth - 1, -Infinity, Infinity, false);
+
+                // ย้อนบอร์ดกลับมาคืนที่เดิม
+                board[m.from.row][m.from.col] = originalSource;
+                board[m.to.row][m.to.col] = originalDest;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = m;
+                }
+            }
+
+            return bestMove || moves[Math.floor(Math.random() * moves.length)];
+        }
+
+        // อัลกอริทึม Minimax พร้อม Alpha-Beta Pruning
+        const EVAL_VALUES = { 'K': 10000, 'R': 500, 'MA': 300, 'KH': 300, 'M': 150, 'PM': 150, 'P': 100 };
+
+        function evaluateBoard() {
+            let score = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    let p = board[r][c];
+                    if (p) {
+                        let val = EVAL_VALUES[p.type] || 0;
+                        
+                        // คะแนนพื้นที่เชิงยุทธศาสตร์: บังคับเบี้ยขึ้นไปลอกคราบ / บังคับขุนให้อยู่ใจกลาง
+                        let positionBonus = 0;
+                        if (p.type === PIECES.PAWN) {
+                            positionBonus = p.color === RED ? r * 15 : (7 - r) * 15;
+                        }
+
+                        if (p.color === RED) {
+                            score += (val + positionBonus);
+                        } else {
+                            score -= (val + positionBonus);
+                        }
+                    }
+                }
+            }
+            return score;
+        }
+
+        function minimax(depth, alpha, beta, isMaximizing) {
+            // เช็คว่าราชาแตงโมฝั่งใดตายระหว่างจำลองหรือไม่
+            let whiteKingAlive = false;
+            let redKingAlive = false;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (board[r][c] && board[r][c].type === PIECES.KING) {
+                        if (board[r][c].color === WHITE) whiteKingAlive = true;
+                        if (board[r][c].color === RED) redKingAlive = true;
+                    }
+                }
+            }
+
+            if (!whiteKingAlive) return 99999;
+            if (!redKingAlive) return -99999;
+            if (depth === 0) return evaluateBoard();
+
+            if (isMaximizing) { // RED AI turn
+                let maxEval = -Infinity;
+                const moves = getAllValidMovesForColor(RED);
+                for (let i = 0; i < moves.length; i++) {
+                    let m = moves[i];
+                    let originalSource = board[m.from.row][m.from.col];
+                    let originalDest = board[m.to.row][m.to.col];
+
+                    board[m.to.row][m.to.col] = originalSource;
+                    board[m.from.row][m.from.col] = null;
+
+                    let evaluation = minimax(depth - 1, alpha, beta, false);
+
+                    board[m.from.row][m.from.col] = originalSource;
+                    board[m.to.row][m.to.col] = originalDest;
+
+                    maxEval = Math.max(maxEval, evaluation);
+                    alpha = Math.max(alpha, evaluation);
+                    if (beta <= alpha) break;
+                }
+                return maxEval;
+            } else { // WHITE Player turn
+                let minEval = Infinity;
+                const moves = getAllValidMovesForColor(WHITE);
+                for (let i = 0; i < moves.length; i++) {
+                    let m = moves[i];
+                    let originalSource = board[m.from.row][m.from.col];
+                    let originalDest = board[m.to.row][m.to.col];
+
+                    board[m.to.row][m.to.col] = originalSource;
+                    board[m.from.row][m.from.col] = null;
+
+                    let evaluation = minimax(depth - 1, alpha, beta, true);
+
+                    board[m.from.row][m.from.col] = originalSource;
+                    board[m.to.row][m.to.col] = originalDest;
+
+                    minEval = Math.min(minEval, evaluation);
+                    beta = Math.min(beta, evaluation);
+                    if (beta <= alpha) break;
+                }
+                return minEval;
+            }
+        }
+
+
+        // --- ระบบเงื่อนไขกติกาและสลอตจบเกม ---
+        function checkGameStatus() {
+            let whiteKingAlive = false;
+            let redKingAlive = false;
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = board[r][c];
+                    if (piece && piece.type === PIECES.KING) {
+                        if (piece.color === WHITE) whiteKingAlive = true;
+                        if (piece.color === RED) redKingAlive = true;
+                    }
+                }
+            }
+
+            const p1Name = loggedInPlayer1 ? loggedInPlayer1.username : "เมลอนเขียว";
+            const p2Name = loggedInPlayer2 ? loggedInPlayer2.username : "พีชชมพู";
+
+            if (!whiteKingAlive) {
+                showGameOver(`แก๊ง ${p2Name} ชนะการประลอง! 🍑🍿`, `พี่แตงโมขาวของ ${p1Name} ขอกลับไปฟูมฟักตัวเองในดินก่อนนะจ๊ะ`);
+            } else if (!redKingAlive) {
+                showGameOver(`แก๊ง ${p1Name} ชนะการประลอง! 🍈🍿`, `พี่แตงโมแดงของ ${p2Name} หนีเข้าไปหาน้ำหวานดับร้อนซะแล้ว`);
+            }
+        }
+
+        // รับข้อมูลทิศทางการเดินของหมาก
+        function getValidMoves(r, c, targetBoard = board) {
+            const piece = targetBoard[r][c];
+            if (!piece) return [];
+
+            const moves = [];
+            const color = piece.color;
+            const dir = color === WHITE ? -1 : 1;
+
+            switch (piece.type) {
+                case PIECES.KING:
+                    const kingOffsets = [
+                        [-1, -1], [-1, 0], [-1, 1],
+                        [0, -1],           [0, 1],
+                        [1, -1],  [1, 0],  [1, 1]
+                    ];
+                    kingOffsets.forEach(([dr, dc]) => {
+                        const nr = r + dr, nc = c + dc;
+                        if (isOnBoard(nr, nc) && (!targetBoard[nr][nc] || targetBoard[nr][nc].color !== color)) {
+                            moves.push({ row: nr, col: nc });
+                        }
+                    });
+                    break;
+
+                case PIECES.QUEEN:
+                    const queenOffsets = [
+                        [-1, -1], [-1, 1],
+                        [1, -1],  [1, 1]
+                    ];
+                    queenOffsets.forEach(([dr, dc]) => {
+                        const nr = r + dr, nc = c + dc;
+                        if (isOnBoard(nr, nc) && (!targetBoard[nr][nc] || targetBoard[nr][nc].color !== color)) {
+                            moves.push({ row: nr, col: nc });
+                        }
+                    });
+                    break;
+
+                case PIECES.BISHOP:
+                    const bishopOffsets = [
+                        [-1, -1], [-1, 1], [1, -1], [1, 1],
+                        [dir, 0]
+                    ];
+                    bishopOffsets.forEach(([dr, dc]) => {
+                        const nr = r + dr, nc = c + dc;
+                        if (isOnBoard(nr, nc) && (!targetBoard[nr][nc] || targetBoard[nr][nc].color !== color)) {
+                            moves.push({ row: nr, col: nc });
+                        }
+                    });
+                    break;
+
+                case PIECES.KNIGHT:
+                    const knightOffsets = [
+                        [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                        [1, -2],  [1, 2],  [2, -1],  [2, 1]
+                    ];
+                    knightOffsets.forEach(([dr, dc]) => {
+                        const nr = r + dr, nc = c + dc;
+                        if (isOnBoard(nr, nc) && (!targetBoard[nr][nc] || targetBoard[nr][nc].color !== color)) {
+                            moves.push({ row: nr, col: nc });
+                        }
+                    });
+                    break;
+
+                case PIECES.ROOK:
+                    const rookDirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                    rookDirs.forEach(([dr, dc]) => {
+                        let nr = r + dr, nc = c + dc;
+                        while (isOnBoard(nr, nc)) {
+                            if (!targetBoard[nr][nc]) {
+                                moves.push({ row: nr, col: nc });
+                            } else {
+                                if (targetBoard[nr][nc].color !== color) {
+                                    moves.push({ row: nr, col: nc });
+                                }
+                                break; 
+                            }
+                            nr += dr;
+                            nc += dc;
+                        }
+                    });
+                    break;
+
+                case PIECES.PAWN:
+                    const nextRow = r + dir;
+                    if (isOnBoard(nextRow, c) && !targetBoard[nextRow][c]) {
+                        moves.push({ row: nextRow, col: c });
+                    }
+                    const captureCols = [c - 1, c + 1];
+                    captureCols.forEach(col => {
+                        if (isOnBoard(nextRow, col)) {
+                            const p = targetBoard[nextRow][col];
+                            if (p && p.color !== color) {
+                                moves.push({ row: nextRow, col: col });
+                            }
+                        }
+                    });
+                    break;
+
+                case PIECES.PROMOTED:
+                    const promoOffsets = [
+                        [-1, -1], [-1, 1],
+                        [1, -1],  [1, 1]
+                    ];
+                    promoOffsets.forEach(([dr, dc]) => {
+                        const nr = r + dr, nc = c + dc;
+                        if (isOnBoard(nr, nc) && (!targetBoard[nr][nc] || targetBoard[nr][nc].color !== color)) {
+                            moves.push({ row: nr, col: nc });
+                        }
+                    });
+                    break;
+            }
+
+            return moves;
+        }
+
+        function isOnBoard(r, c) {
+            return r >= 0 && r < 8 && c >= 0 && c < 8;
+        }
+
+        function resetGame() {
+            initBoard();
+        }
+
+        function showRules() {
+            document.getElementById('rules-modal').classList.remove('hidden');
+        }
+
+        function hideRules() {
+            document.getElementById('rules-modal').classList.add('hidden');
+        }
+
+        function showGameOver(winnerTitle, descText) {
+            document.getElementById('winner-text').innerText = winnerTitle;
+            document.getElementById('winner-subtext').innerText = descText;
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
+        function hideGameOver() {
+            document.getElementById('gameover-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
