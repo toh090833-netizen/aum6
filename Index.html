@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบริหารจัดการการลาเรียน - Student Absence System</title>
+    <!-- นำเข้า Tailwind CSS เพื่อการออกแบบที่สวยงามและรองรับ Responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- นำเข้า Google Fonts (Sarabun สำหรับภาษาไทย) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- ไอคอน FontAwesome สำหรับหน้าตาที่พรีเมียม -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between">
+
+    <!-- แจ้งเตือนความสำเร็จ/แจ้งเตือนข้อผิดพลาด (Custom Toast Container) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- ==================== หน้าหลักก่อนเข้าระบบ (PORTAL / LOGIN SCREEN) ==================== -->
+    <div id="portal-screen" class="min-h-screen flex flex-col justify-center items-center p-4 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+        <div class="bg-white/95 backdrop-blur rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/20 transition-all duration-300 relative">
+            <!-- ปุ่มตั้งค่า URL ของ Apps Script Web App (มุมขวาบน) -->
+            <button onclick="openScriptUrlModal()" title="ตั้งค่า URL เชื่อมต่อ Google Sheets" class="absolute top-4 right-4 text-slate-400 hover:text-indigo-600 transition-all">
+                <i class="fa-solid fa-gear text-lg"></i>
+            </button>
+
+            <!-- ส่วนหัวของหน้าเข้าสู่ระบบ -->
+            <div class="text-center mb-6">
+                <div class="inline-flex bg-indigo-600 text-white p-4 rounded-2xl font-bold text-3xl shadow-lg mb-3 animate-bounce">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h1 class="text-2xl font-black text-slate-800">ระบบลาเรียนออนไลน์</h1>
+                <p class="text-sm text-slate-500 mt-1">โรงเรียนกุศลวิทยา</p>
+            </div>
+
+            <!-- แท็บสลับประเภทผู้เข้าใช้งาน (นักเรียน / อาจารย์ / แอดมิน) -->
+            <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+                <button onclick="switchPortalTab('student')" id="portal-tab-student" class="flex-1 py-2 rounded-lg text-xs font-bold text-indigo-600 bg-white shadow-sm transition-all flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-user-graduate"></i>
+                    <span>นักเรียน</span>
+                </button>
+                <button onclick="switchPortalTab('teacher')" id="portal-tab-teacher" class="flex-1 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-800 transition-all flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>อาจารย์</span>
+                </button>
+                <button onclick="switchPortalTab('admin')" id="portal-tab-admin" class="flex-1 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-800 transition-all flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span>แอดมิน</span>
+                </button>
+            </div>
+
+            <!-- ฟอร์มเข้าสู่ระบบของ นักเรียน -->
+            <form id="portal-student-form" onsubmit="handlePortalLogin(event, 'student')" class="space-y-4">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ - นามสกุล <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                <i class="fa-regular fa-user"></i>
+                            </span>
+                            <input type="text" id="portal-name" required placeholder="เช่น นายนที สุวรรณภูมิ" class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 font-medium">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- ตัวเลือก ชั้น ม.1 - ม.6 -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">ชั้น ม. <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                    <i class="fa-solid fa-school"></i>
+                                </span>
+                                <select id="portal-class" required class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 font-medium appearance-none">
+                                    <option value="" disabled selected>เลือกชั้น ม.</option>
+                                    <option value="1">ม.1</option>
+                                    <option value="2">ม.2</option>
+                                    <option value="3">ม.3</option>
+                                    <option value="4">ม.4</option>
+                                    <option value="5">ม.5</option>
+                                    <option value="6">ม.6</option>
+                                </select>
+                                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                </span>
+                            </div>
+                        </div>
+                        <!-- รหัสนักเรียน -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสนักเรียน <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                    <i class="fa-solid fa-id-card"></i>
+                                </span>
+                                <input type="text" id="portal-id" required placeholder="เช่น 10015" class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 font-medium">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>เข้าใช้งานในฐานะนักเรียน</span>
+                </button>
+            </form>
+
+            <!-- ฟอร์มเข้าสู่ระบบของ อาจารย์ -->
+            <form id="portal-teacher-form" onsubmit="handlePortalLogin(event, 'teacher')" class="space-y-4 hidden">
+                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-center text-xs text-indigo-700 space-y-1">
+                    <p class="font-bold"><i class="fa-solid fa-circle-info"></i> สิทธิ์เข้าถึงของอาจารย์ผู้ดูแล</p>
+                    <p>ใช้เพื่อพิจารณาคำขอลาเรียน อนุมัติ และเช็คชื่อรายวิชา</p>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้ใช้งานอาจารย์ (ชื่อสมมติ)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </span>
+                            <input type="text" id="portal-teacher-name" value="อาจารย์ปัญญา ประเสริฐวิทย์" class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 font-medium">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>เข้าใช้งานในฐานะอาจารย์</span>
+                </button>
+            </form>
+
+            <!-- ฟอร์มเข้าสู่ระบบของ ผู้ดูแลระบบ (Admin) -->
+            <form id="portal-admin-form" onsubmit="handlePortalLogin(event, 'admin')" class="space-y-4 hidden">
+                <div class="bg-purple-50 p-4 rounded-xl border border-purple-100 text-center text-xs text-purple-700 space-y-1">
+                    <p class="font-bold"><i class="fa-solid fa-user-shield"></i> สิทธิ์ผู้ดูแลระบบ (Admin Portal)</p>
+                    <p>ใช้สำหรับจัดการรายชื่อนักเรียน คาบเรียนของแต่ละวิชา และรายชื่อครู</p>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้ใช้งานแอดมิน</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                            <input type="text" id="portal-admin-name" value="ผู้ดูแลระบบกุศลวิทยา" class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 font-medium">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>เข้าสู่แผงควบคุมระบบ Admin</span>
+                </button>
+            </form>
+
+            <div class="text-center mt-6">
+                <p class="text-[11px] text-slate-400">พัฒนาขึ้นเพื่อยกระดับความสะดวกและสถิติที่โปร่งใสในสถานศึกษา</p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================== หน้าแอปพลิเคชันหลัก (MAIN APP WRAPPER) ==================== -->
+    <div id="main-app" class="hidden flex flex-col min-h-screen">
+        <!-- ส่วนหัวของระบบ (Navigation Bar) -->
+        <header class="bg-indigo-600 text-white shadow-lg sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <!-- โลโก้และชื่อระบบ -->
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-white text-indigo-600 p-2 rounded-lg font-bold text-xl shadow-md">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold leading-none">ระบบลาเรียนออนไลน์</h1>
+                            <span class="text-xs text-indigo-200">โรงเรียนกุศลวิทยา</span>
+                        </div>
+                    </div>
+
+                    <!-- แผงสลับบทบาท + ปุ่มออกจากระบบ -->
+                    <div class="flex items-center space-x-3">
+                        <div class="hidden sm:flex items-center space-x-1 bg-indigo-700 p-1 rounded-xl border border-indigo-500">
+                            <button id="btn-student-role" onclick="switchRole('student')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all">
+                                <i class="fa-solid fa-user-graduate mr-0.5"></i>นักเรียน
+                            </button>
+                            <button id="btn-teacher-role" onclick="switchRole('teacher')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all">
+                                <i class="fa-solid fa-user-tie mr-0.5"></i>อาจารย์
+                            </button>
+                            <button id="btn-admin-role" onclick="switchRole('admin')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all">
+                                <i class="fa-solid fa-user-gear mr-0.5"></i>แอดมิน
+                            </button>
+                        </div>
+
+                        <!-- ปุ่มออกจากระบบกลับไปหน้าหลัก -->
+                        <button onclick="logOut()" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1 shadow">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span class="hidden md:inline">ออกจากระบบ</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ส่วนเนื้อหาหลัก (Main Content) -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- ==================== ส่วนของนักเรียน (STUDENT SECTION) ==================== -->
+            <section id="student-section" class="space-y-6">
+                <!-- บัตรข้อมูลส่วนตัวนักเรียนและสรุปการลาสะสม -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- บัตรข้อมูลส่วนตัวนักเรียนที่เข้าใช้จากหน้าแรก -->
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl animate-fade-in md:col-span-2 flex flex-col justify-between">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/40 shadow-inner">
+                                    <i class="fa-solid fa-user-astronaut text-3xl"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-bold" id="display-student-name">...ชื่อนักเรียน...</h2>
+                                    <p class="text-sm text-indigo-100" id="display-student-info">ชั้น ม. ... | รหัสนักเรียน ...</p>
+                                </div>
+                            </div>
+                            
+                            <!-- ปุ่มลิงก์ดูตารางเรียน (ดึงจากลิงก์ที่แอดมินตั้งค่า) -->
+                            <div id="student-schedule-button-container" class="shrink-0">
+                                <!-- จะเรนเดอร์ปุ่มด้วย JS ตามระดับชั้น ม. ของนักเรียน -->
+                            </div>
+                        </div>
+                        
+                        <!-- อัตราการเข้าเรียนเฉลี่ยรวมทุกวิชา -->
+                        <div class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-circle-check text-emerald-400 animate-pulse"></i>
+                                <span class="text-xs text-indigo-100">อัตราการเข้าชั้นเรียนรวม (เกณฑ์ขั้นต่ำ 80%):</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl font-black" id="student-attendance-rate">100.0%</span>
+                                <div class="w-10 h-10 rounded-full border-2 border-emerald-400 flex items-center justify-center font-bold text-[10px] text-emerald-300 shadow-inner" id="student-attendance-ring">
+                                    100%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- บัตรสรุปสถิติขาด/ลาเรียนสะสมแยกประเภท -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                <i class="fa-solid fa-chart-pie text-indigo-500"></i>
+                                <span>จำนวนครั้งที่ขาด/ลาเรียนสะสมรวม</span>
+                            </h3>
+                            <!-- แผงแสดงจำนวนแยกประเภท -->
+                            <div class="grid grid-cols-4 gap-1.5">
+                                <div class="bg-rose-50 border border-rose-100 p-2 rounded-xl text-center">
+                                    <p class="text-[9px] font-bold text-rose-600">ลาป่วย</p>
+                                    <p class="text-lg font-black text-rose-700 mt-0.5" id="student-stat-sick">0</p>
+                                    <p class="text-[9px] text-rose-400">ครั้ง</p>
+                                </div>
+                                <div class="bg-amber-50 border border-amber-100 p-2 rounded-xl text-center">
+                                    <p class="text-[9px] font-bold text-amber-600">ลากิจ</p>
+                                    <p class="text-lg font-black text-amber-700 mt-0.5" id="student-stat-personal">0</p>
+                                    <p class="text-[9px] text-amber-400">ครั้ง</p>
+                                </div>
+                                <div class="bg-sky-50 border border-sky-100 p-2 rounded-xl text-center">
+                                    <p class="text-[9px] font-bold text-sky-600">อื่นๆ</p>
+                                    <p class="text-lg font-black text-sky-700 mt-0.5" id="student-stat-other">0</p>
+                                    <p class="text-[9px] text-sky-400">ครั้ง</p>
+                                </div>
+                                <div class="bg-red-50 border border-red-100 p-2 rounded-xl text-center">
+                                    <p class="text-[9px] font-bold text-red-600">ขาดเรียน</p>
+                                    <p class="text-lg font-black text-red-700 mt-0.5" id="student-stat-absent">0</p>
+                                    <p class="text-[9px] text-red-400">ครั้ง</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- สรุปผลรวมทั้งหมด -->
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                            <span class="font-bold text-slate-500">รวมหยุดเรียนสะสม:</span>
+                            <span class="font-black text-slate-800 text-xs bg-slate-100 px-2.5 py-1 rounded-lg" id="student-stat-total">0 ครั้ง</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ส่วนแสดงผลสถิติรายวิชาอย่างละเอียด -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-book-bookmark text-indigo-500 text-lg"></i>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">เช็คสถิติการเข้าเรียน / การลา / ขาดเรียน แยกแต่ละรายวิชา</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">นักเรียนต้องมีเวลาเรียนไม่น้อยกว่า 80% ของเวลาเรียนทั้งหมดในแต่ละวิชา จึงจะมีสิทธิ์เข้าสอบปลายภาค</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ตารางแสดงสถิติรายวิชา -->
+                    <div class="overflow-x-auto w-full border border-slate-100 rounded-xl">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm text-left">
+                            <thead class="bg-slate-50 text-slate-700 font-bold text-xs">
+                                <tr>
+                                    <th class="px-6 py-3 text-slate-600">รายวิชา</th>
+                                    <th class="px-6 py-3 text-center text-slate-600">หน่วยกิต</th>
+                                    <th class="px-6 py-3 text-center text-slate-600">จำนวนคาบเรียนทั้งหมด</th>
+                                    <th class="px-6 py-3 text-center text-emerald-600 bg-emerald-50/50">เข้าเรียน (ครั้ง)</th>
+                                    <th class="px-6 py-3 text-center text-amber-600 bg-amber-50/50">การลา (ครั้ง)</th>
+                                    <th class="px-6 py-3 text-center text-rose-600 bg-rose-50/50">ขาดเรียน (ครั้ง)</th>
+                                    <th class="px-6 py-3 text-slate-600">เปอร์เซ็นต์เข้าเรียนจริง</th>
+                                    <th class="px-6 py-3 text-center text-slate-600">สถานะสิทธิ์สอบ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-subjects-table-body" class="divide-y divide-slate-100 bg-white">
+                                <!-- เรนเดอร์ข้อมูลผ่าน JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- เมนูหลักและหน้าส่งใบลา -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- ฝั่งซ้าย: แบบฟอร์มยื่นคำขอลาเรียน -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1">
+                        <div class="flex items-center space-x-2 pb-4 mb-4 border-b border-slate-100">
+                            <i class="fa-solid fa-paper-plane text-indigo-500 text-lg"></i>
+                            <h3 class="font-bold text-slate-800 text-lg">แบบฟอร์มยื่นคำขอลาเรียน</h3>
+                        </div>
+                        
+                        <form id="leave-request-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                            
+                            <!-- ประเภทการลา -->
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1.5">ประเภทการลา <span class="text-red-500">*</span></label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <label class="border-2 border-slate-200 rounded-xl p-2 text-center cursor-pointer hover:border-indigo-500 transition-all flex flex-col items-center gap-1" id="label-sick">
+                                        <input type="radio" name="leave_type" value="ลาป่วย" required class="sr-only" onclick="selectLeaveType('sick')">
+                                        <i class="fa-solid fa-prescription-bottle-medical text-rose-500 text-lg"></i>
+                                        <span class="text-xs font-semibold text-slate-700">ลาป่วย</span>
+                                    </label>
+                                    <label class="border-2 border-slate-200 rounded-xl p-2 text-center cursor-pointer hover:border-indigo-500 transition-all flex flex-col items-center gap-1" id="label-personal">
+                                        <input type="radio" name="leave_type" value="ลากิจ" required class="sr-only" onclick="selectLeaveType('personal')">
+                                        <i class="fa-solid fa-briefcase text-amber-500 text-lg"></i>
+                                        <span class="text-xs font-semibold text-slate-700">ลากิจ</span>
+                                    </label>
+                                    <label class="border-2 border-slate-200 rounded-xl p-2 text-center cursor-pointer hover:border-indigo-500 transition-all flex flex-col items-center gap-1" id="label-other">
+                                        <input type="radio" name="leave_type" value="อื่นๆ" required class="sr-only" onclick="selectLeaveType('other')">
+                                        <i class="fa-solid fa-circle-info text-sky-500 text-lg"></i>
+                                        <span class="text-xs font-semibold text-slate-700">อื่นๆ</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- วิชาที่ต้องการลา (อัปเดตวิชาใหม่ทั้งหมด) -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">วิชาที่ต้องการลา <span class="text-red-500">*</span></label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                        <i class="fa-solid fa-book"></i>
+                                    </span>
+                                    <select id="leave-subject-select" required class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-9 pr-8 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 appearance-none">
+                                        <option value="ทุกวิชา (ทั้งวัน)">ทุกวิชา (ลาทั้งวัน)</option>
+                                        <option value="การอ่านเพื่อความเข้าใจ">การอ่านเพื่อความเข้าใจ</option>
+                                        <option value="วิทยาการคำนวณ">วิทยาการคำนวณ</option>
+                                        <option value="วอลเลย์บอล">วอลเลย์บอล</option>
+                                        <option value="สังคมศึกษา">สังคมศึกษา</option>
+                                        <option value="การเขียน 1">การเขียน 1</option>
+                                        <option value="ทัศนศิลป์">ทัศนศิลป์</option>
+                                        <option value="ก.ลูกเสือ/เนตรนารี">ก.ลูกเสือ/เนตรนารี</option>
+                                        <option value="เกษตรท้องถิ่น">เกษตรท้องถิ่น</option>
+                                        <option value="ก.ชุมนุม/จิตสาธารณะ">ก.ชุมนุม/จิตสาธารณะ</option>
+                                    </select>
+                                    <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- วันที่เริ่มต้นลา -->
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center">
+                                    <label class="block text-xs font-semibold text-slate-700">ตั้งแต่วันที่ <span class="text-red-500">*</span></label>
+                                    <span id="start-day-badge" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md transition-all duration-200 empty:hidden"></span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <select id="start-day" required class="bg-slate-50 border border-slate-300 rounded-lg px-2 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" onchange="onDateDropdownChange()">
+                                        <option value="">วัน (ที่)</option>
+                                    </select>
+                                    <select id="start-month" required class="bg-slate-50 border border-slate-300 rounded-lg px-2 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" onchange="onDateDropdownChange()">
+                                        <option value="">เดือน</option>
+                                        <option value="1">1 (ม.ค.)</option>
+                                        <option value="2">2 (ก.พ.)</option>
+                                        <option value="3">3 (มี.ค.)</option>
+                                        <option value="4">4 (เม.ย.)</option>
+                                        <option value="5">5 (พ.ค.)</option>
+                                        <option value="6">6 (มิ.ย.)</option>
+                                        <option value="7">7 (ก.ค.)</option>
+                                        <option value="8">8 (ส.ค.)</option>
+                                        <option value="9">9 (ก.ย.)</option>
+                                        <option value="10">10 (ต.ค.)</option>
+                                        <option value="11">11 (พ.ย.)</option>
+                                        <option value="12">12 (ธ.ค.)</option>
+                                    </select>
+                                    <select id="start-year" required class="bg-slate-50 border border-slate-300 rounded-lg px-2 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" onchange="onDateDropdownChange()">
+                                        <option value="">ปี พ.ศ.</option>
+                                        <option value="2569">2569</option>
+                                        <option value="2570">2570</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- วันที่สิ้นสุดการลา -->
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center">
+                                    <label class="block text-xs font-semibold text-slate-700">ถึงวันที่ <span class="text-red-500">*</span></label>
+                                    <span id="end-day-badge" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md transition-all duration-200 empty:hidden"></span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <select id="end-day" required class="bg-slate-50 border border-slate-300 rounded-lg px-2 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" onchange="onDateDropdownChange()">
+                                        <option value="">วัน (ที่)</option>
+                                    </select>
+                                    <select id="end-month" required class="bg-slate-50 border border-slate-300 rounded-lg px-2 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" onchange="onDateDropdownChange()">
+                                        <option value="">เดือน</option>
+                                        <option value="1">1 (ม.ค.)</option>
+                                        <option value="2">2 (ก.พ.)</option>
+                                        <option value="3">3 (มี.ค.)</option>
+                                        <option value="4">4 (เม.ย.)</option>
+                                        <option value="5">5 (พ.ค.)</option>
+                                        <option value="6">6 (มิ.ย.)</option>
+                                        <option value="7">7 (ก.ค.)</option>
+                                        <option value="8">8 (ส.ค.)</option>
+                                        <option value="9">9 (ก.ย.)</option>
+                                        <option value="10">10 (ต.ค.)</option>
+                                        <option value="11">11 (พ.ย.)</option>
+                                        <option value="12">12 (ธ.ค.)</option>
+                                    </select>
+                                    <select id="end-year" required class="bg-slate-50 border border-slate-300 rounded-lg px-2 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700" onchange="onDateDropdownChange()">
+                                        <option value="">ปี พ.ศ.</option>
+                                        <option value="2569">2569</option>
+                                        <option value="2570">2570</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- เหตุผลการลา -->
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-semibold text-slate-700">เหตุผลการลา <span class="text-red-500">*</span></label>
+                                <textarea id="leave-reason" rows="3" placeholder="ระบุเหตุผลการลาอย่างชัดเจน..." required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700"></textarea>
+                                
+                                <!-- แถบเหตุผลด่วน (Quick Reasons) -->
+                                <div class="space-y-1">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-bolt text-amber-500"></i> เลือกเหตุผลการลาที่พบบ่อย:</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <button type="button" onclick="setQuickReason('มีไข้ตัวร้อน ปวดหัวรุนแรง และแพทย์แนะนำให้พักรักษาตัว')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 text-slate-600 font-medium px-2 py-1 rounded-md transition-all border border-slate-200">
+                                            🤒 มีไข้ปวดหัว
+                                        </button>
+                                        <button type="button" onclick="setQuickReason('ท้องร่วง อาเจียนอย่างรุนแรง เนื่องจากอาหารเป็นพิษ ไม่มีแรงเดินทาง')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 text-slate-600 font-medium px-2 py-1 rounded-md transition-all border border-slate-200">
+                                            🤢 ท้องเสียรุนแรง
+                                        </button>
+                                        <button type="button" onclick="setQuickReason('มีความจำเป็นทางครอบครัว ต้องร่วมเดินทางไปต่างจังหวัด')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 text-slate-600 font-medium px-2 py-1 rounded-md transition-all border border-slate-200">
+                                            🚗 ธุระด่วนครอบครัว
+                                        </button>
+                                        <button type="button" onclick="setQuickReason('มีนัดตรวจสุขภาพฟันและช่องปากประจําปีกับทันตแพทย์')" class="text-[10px] bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 text-slate-600 font-medium px-2 py-1 rounded-md transition-all border border-slate-200">
+                                            🦷 ทันตกรรมนัดหมาย
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- แนบไฟล์หลักฐาน -->
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">แนบไฟล์หลักฐาน (ถ้ามี)</label>
+                                <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center cursor-pointer hover:bg-slate-50 transition-all relative">
+                                    <input type="file" id="leave-file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleFileSelected(event)">
+                                    <div class="text-slate-500 space-y-1">
+                                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400"></i>
+                                        <p class="text-xs" id="file-upload-label">คลิกหรือลากไฟล์ภาพใบรับรองแพทย์ / ใบขออนุญาตมาวาง</p>
+                                        <p class="text-[10px] text-slate-400">PDF, JPG, PNG (สูงสุด 5MB)</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>ส่งใบลาเรียน</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- ฝั่งขวา: รายการประวัติคำขอลาเรียนของฉัน -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2 flex flex-col h-full">
+                        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                            <div class="flex flex-col">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-clock-rotate-left text-indigo-500 text-lg"></i>
+                                    <h3 class="font-bold text-slate-800 text-lg">ประวัติคำขอลาเรียนของฉัน</h3>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-0.5" id="history-filter-notice">(แสดงประวัติการยื่นใบลาของท่าน)</p>
+                            </div>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold">
+                                ทั้งหมด <span id="student-request-count">0</span> รายการ
+                            </span>
+                        </div>
+
+                        <!-- ส่วนของตารางแสดงประวัติ (Responsive Table) -->
+                        <div class="overflow-x-auto w-full flex-grow max-h-[580px] border border-slate-100 rounded-xl">
+                            <table class="min-w-full divide-y divide-slate-200 text-sm text-left">
+                                <thead class="bg-slate-50 text-slate-700 uppercase font-bold text-xs sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-4 py-3 text-slate-600">ประเภท</th>
+                                        <th class="px-4 py-3 text-slate-600">วิชา</th>
+                                        <th class="px-4 py-3 text-slate-600">วัน</th>
+                                        <th class="px-4 py-3 text-slate-600">วันที่ (ว/ด/ป)</th>
+                                        <th class="px-4 py-3 text-slate-600">เหตุผลความจำเป็น</th>
+                                        <th class="px-4 py-3 text-slate-600">การตอบกลับจากครู</th>
+                                        <th class="px-4 py-3 text-slate-600">หลักฐาน</th>
+                                        <th class="px-4 py-3 text-slate-600">สถานะ</th>
+                                        <th class="px-4 py-3 text-center text-slate-600">การจัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="student-history-table-body" class="divide-y divide-slate-100 bg-white">
+                                    <!-- ข้อมูลใบลาจะเรนเดอร์ในนี้ด้วย Javascript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ==================== ส่วนของอาจารย์ / ผู้พิจารณา (TEACHER SECTION) ==================== -->
+            <section id="teacher-section" class="hidden space-y-6 animate-fade-in">
+                <!-- ส่วนแผงสถิติรวม -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase">คำขอลาทั้งหมด</p>
+                            <p class="text-2xl font-black text-slate-800 mt-1" id="stat-total">0</p>
+                        </div>
+                        <div class="bg-indigo-50 text-indigo-500 p-3 rounded-xl">
+                            <i class="fa-solid fa-file-invoice text-xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase">รอพิจารณาอนุมัติ</p>
+                            <p class="text-2xl font-black text-amber-500 mt-1" id="stat-pending">0</p>
+                        </div>
+                        <div class="bg-amber-50 text-amber-500 p-3 rounded-xl">
+                            <i class="fa-solid fa-hourglass-half text-xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase">อนุมัติแล้ว</p>
+                            <p class="text-2xl font-black text-emerald-500 mt-1" id="stat-approved">0</p>
+                        </div>
+                        <div class="bg-emerald-50 text-emerald-500 p-3 rounded-xl">
+                            <i class="fa-solid fa-circle-check text-xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase">ปฏิเสธ / ไม่อนุมัติ</p>
+                            <p class="text-2xl font-black text-rose-500 mt-1" id="stat-rejected">0</p>
+                        </div>
+                        <div class="bg-rose-50 text-rose-500 p-3 rounded-xl">
+                            <i class="fa-solid fa-circle-xmark text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- ฝั่งซ้าย: จัดการคำขอที่รอนุมัติ + ระบบเช็คชื่อจำลอง (ด้านบนกล่องข้อความ) -->
+                    <div class="lg:col-span-2 space-y-6 flex flex-col h-full">
+                        
+                        <!-- บันทึกเข้าเรียน/ขาดเรียนจำลอง -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="flex items-center space-x-2 pb-3 mb-3 border-b border-slate-100">
+                                <i class="fa-solid fa-clipboard-user text-indigo-500 text-lg"></i>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-sm">ระบบจำลองการเช็คชื่อเข้าชั้นเรียนรายวัน (คุณครูทดสอบบันทึก "ขาดเรียน" ได้ที่นี่)</h3>
+                                    <p class="text-[11px] text-slate-400">เลือกชื่อนักเรียนและวิชาเพื่อจำลองการบันทึก ขาดเรียน / เข้าเรียน เพื่อดูสถิติคำนวณสิทธิ์สอบแบบทันที</p>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">เลือกนักเรียน</label>
+                                    <select id="teacher-roll-student" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-semibold">
+                                        <!-- โหลดชื่อจากสคริปต์หลักแบบไดนามิก -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">เลือกวิชา (อัปเดตวิชาใหม่)</label>
+                                    <select id="teacher-roll-subject" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-semibold">
+                                        <option value="การอ่านเพื่อความเข้าใจ">การอ่านเพื่อความเข้าใจ</option>
+                                        <option value="วิทยาการคำนวณ">วิทยาการคำนวณ</option>
+                                        <option value="วอลเลย์บอล">วอลเลย์บอล</option>
+                                        <option value="สังคมศึกษา">สังคมศึกษา</option>
+                                        <option value="การเขียน 1">การเขียน 1</option>
+                                        <option value="ทัศนศิลป์">ทัศนศิลป์</option>
+                                        <option value="ก.ลูกเสือ/เนตรนารี">ก.ลูกเสือ/เนตรนารี</option>
+                                        <option value="เกษตรท้องถิ่น">เกษตรท้องถิ่น</option>
+                                        <option value="ก.ชุมนุม/จิตสาธารณะ">ก.ชุมนุม/จิตสาธารณะ</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">สถานะเวลาเรียน</label>
+                                    <select id="teacher-roll-status" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-bold">
+                                        <option value="absent" class="text-rose-600 font-bold">❌ บันทึกว่า "ขาดเรียน"</option>
+                                        <option value="present" class="text-emerald-600 font-bold">✔️ บันทึกว่า "เข้าเรียน"</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <button type="button" onclick="submitTeacherRollCall()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-1.5 px-4 rounded-lg text-xs transition-all flex items-center justify-center space-x-1 shadow-md">
+                                        <i class="fa-solid fa-floppy-disk"></i>
+                                        <span>บันทึกข้อมูล</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- กล่องข้อความรอพิจารณาอนุมัติใบลา -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex-grow">
+                            <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                                <div class="flex items-center space-x-2">
+                                    <span class="relative flex h-3 w-3">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                                    </span>
+                                    <h3 class="font-bold text-slate-800 text-lg">กล่องข้อความรอพิจารณาอนุมัติใบลา</h3>
+                                </div>
+                                <!-- คืนค่าสแปนเป้าหมายของ innerText เพื่อป้องกัน Null Pointer Exception -->
+                                <span class="text-xs bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full font-semibold" id="pending-badge-count">
+                                    รอการตัดสินใจ 0 รายการ
+                                </span>
+                            </div>
+
+                            <!-- รายการที่รอการอนุมัติ -->
+                            <div id="teacher-pending-list" class="space-y-4 overflow-y-auto max-h-[500px] pr-1">
+                                <!-- โหลดจาก JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ฝั่งขวา: รายชื่อนักเรียน และกิจกรรมล่าสุด -->
+                    <div class="space-y-6 lg:col-span-1">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="flex items-center space-x-2 pb-3 mb-3 border-b border-slate-100">
+                                <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+                                <h4 class="font-bold text-slate-800 text-sm">นักเรียนที่มีการขาด/ลาสะสมสูงสุด</h4>
+                            </div>
+                            <div id="teacher-alert-list" class="space-y-3 text-xs">
+                                <!-- โหลดรายชื่อกลุ่มเสี่ยงจาก JS แบบไดนามิก -->
+                            </div>
+                        </div>
+
+                        <!-- รายการประวัติแบบย่อทั้งหมดที่ผ่านพิจารณาแล้ว -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                                <i class="fa-solid fa-check-double text-slate-500"></i>
+                                <h4 class="font-bold text-slate-800 text-sm">ประวัติที่ดำเนินการเสร็จสิ้น</h4>
+                            </div>
+                            <div id="teacher-processed-list" class="space-y-3 max-h-[250px] overflow-y-auto pr-1 text-xs">
+                                <!-- โหลดจาก JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ==================== ส่วนของแอดมิน / ผู้ดูแลระบบ (ADMIN SECTION) ==================== -->
+            <section id="admin-section" class="hidden space-y-6 animate-fade-in">
+                <!-- ส่วนหัวและแผงสรุปแอดมิน -->
+                <div class="bg-gradient-to-r from-purple-700 to-indigo-800 rounded-2xl p-6 text-white shadow-xl">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/40 shadow-inner">
+                                <i class="fa-solid fa-user-shield text-2xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold" id="display-admin-name">แผงควบคุมแอดมินกลาง (Admin Portal)</h2>
+                                <p class="text-xs text-purple-100">จัดการข้อมูลนักเรียน, เพิ่มคาบเรียน, และปรับแต่งระบบ โรงเรียนกุศลวิทยา</p>
+                            </div>
+                        </div>
+                        <div class="bg-white/10 rounded-xl p-3 border border-white/20 text-xs">
+                            <p class="font-bold">ข้อมูลสถิติทั้งโรงเรียน:</p>
+                            <p class="mt-1">นักเรียนทั้งหมด: <span id="admin-stat-total-students" class="font-black text-sm text-yellow-300">0</span> คน</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- แท็บการควบคุมย่อยหลังบ้าน (Admin Tabs) -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- คอลัมน์ด้านซ้าย: เมนูควบคุมแท็บแอดมิน -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1 space-y-2">
+                        <p class="text-xs font-bold text-slate-400 uppercase px-2 mb-2 tracking-wider">เมนูหลักผู้ดูแล</p>
+                        <button onclick="switchAdminTab('students-tab')" id="admin-btn-students-tab" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 bg-purple-500 text-white">
+                            <i class="fa-solid fa-users-gear"></i>
+                            <span>จัดการรายชื่อนักเรียน</span>
+                        </button>
+                        <button onclick="switchAdminTab('subjects-tab')" id="admin-btn-subjects-tab" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 text-slate-600 hover:bg-slate-50">
+                            <i class="fa-solid fa-book-open-reader"></i>
+                            <span>จัดการหลักสูตรและตารางเรียน</span>
+                        </button>
+                        <button onclick="switchAdminTab('teachers-tab')" id="admin-btn-teachers-tab" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 text-slate-600 hover:bg-slate-50">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                            <span>จัดการรายชื่ออาจารย์</span>
+                        </button>
+                    </div>
+
+                    <!-- คอลัมน์ด้านขวา: เนื้อหาตามแท็บที่เลือก -->
+                    <div class="lg:col-span-3 space-y-6">
+                        
+                        <!-- แท็บที่ 1: จัดการรายชื่อนักเรียน (Students Management) -->
+                        <div id="admin-students-tab" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">ฐานข้อมูลรายชื่อนักเรียน</h3>
+                                    <p class="text-xs text-slate-400">ค้นหา เพิ่ม แก้ไข และลบข้อมูลนักเรียนในระบบทะเบียนของโรงเรียน</p>
+                                </div>
+                                <!-- ปุ่มเปิดฟอร์มเพิ่มนักเรียนใหม่ -->
+                                <button onclick="toggleAddStudentForm()" class="bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shadow-md">
+                                    <i class="fa-solid fa-user-plus"></i>
+                                    <span>เพิ่มนักเรียนใหม่</span>
+                                </button>
+                            </div>
+
+                            <!-- ฟอร์มเพิ่มนักเรียนใหม่ (พับเก็บได้) -->
+                            <div id="admin-add-student-form-container" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in space-y-3">
+                                <p class="text-xs font-bold text-purple-700"><i class="fa-solid fa-user-plus mr-1"></i> กรอกข้อมูลนักเรียนคนใหม่</p>
+                                <form id="admin-add-student-form" onsubmit="handleAdminAddStudent(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">ชื่อ - นามสกุล <span class="text-red-500">*</span></label>
+                                        <input type="text" id="admin-new-name" required placeholder="เช่น เด็กหญิงสมรัก สดใส" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:ring-1 focus:ring-purple-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">ชั้น ม. <span class="text-red-500">*</span></label>
+                                        <select id="admin-new-class" required class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:ring-1 focus:ring-purple-500">
+                                            <option value="1">ม.1</option>
+                                            <option value="2">ม.2</option>
+                                            <option value="3">ม.3</option>
+                                            <option value="4">ม.4</option>
+                                            <option value="5">ม.5</option>
+                                            <option value="6" selected>ม.6</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">รหัสนักเรียน <span class="text-red-500">*</span></label>
+                                        <input type="text" id="admin-new-id" required placeholder="เช่น 10099" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium focus:ring-1 focus:ring-purple-500">
+                                    </div>
+                                    <div class="sm:col-span-4 flex justify-end space-x-2 pt-2">
+                                        <button type="button" onclick="toggleAddStudentForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-600 font-bold px-3 py-1.5 rounded-lg text-xs transition-all">ยกเลิก</button>
+                                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-1.5 rounded-lg text-xs transition-all flex items-center space-x-1"><i class="fa-solid fa-check"></i><span>บันทึกชื่อ</span></button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- ตารางรายชื่อนักเรียนหลังบ้าน -->
+                            <div class="overflow-x-auto w-full border border-slate-100 rounded-xl">
+                                <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+                                    <thead class="bg-slate-50 text-slate-700 font-bold">
+                                        <tr>
+                                            <th class="px-4 py-3 text-slate-600">รหัสนักเรียน</th>
+                                            <th class="px-4 py-3 text-slate-600">ชื่อ - นามสกุล</th>
+                                            <th class="px-4 py-3 text-slate-600">ระดับชั้น</th>
+                                            <th class="px-4 py-3 text-center text-slate-600">เข้าเรียนเฉลี่ย (%)</th>
+                                            <th class="px-4 py-3 text-center text-slate-600">สถานะเสี่ยง</th>
+                                            <th class="px-4 py-3 text-center text-slate-600">การควบคุมหลังบ้าน</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-students-table-body" class="divide-y divide-slate-100 bg-white">
+                                        <!-- ข้อมูลนักเรียนจะเรนเดอร์ในนี้ด้วย Javascript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- แท็บที่ 2: จัดการคาบเรียนและหลักสูตร แยกรายชั้น ม.1 - ม.6 (ปรับปรุงใหม่ตามความต้องการ) -->
+                        <div id="admin-subjects-tab" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+                            <div class="flex flex-col lg:flex-row lg:items-center justify-between pb-4 border-b border-slate-100 gap-4">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">จัดการจำนวนคาบเรียนและหน่วยกิตรายวิชา</h3>
+                                    <p class="text-xs text-slate-400">กำหนดจำนวนคาบเรียนรวม และน้ำหนักหน่วยกิตหลักสูตรประจำระดับชั้น ม.1 - ม.6 รวมถึงผูกตารางสอน</p>
+                                </div>
+                                
+                                <!-- Dropdown สำหรับเลือกห้อง/ชั้นปี ม.1 - ม.6 -->
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-bold text-slate-600 shrink-0"><i class="fa-solid fa-filter text-purple-600"></i> เลือกชั้นปี:</span>
+                                    <select id="admin-grade-selector" onchange="renderAdminSubjectsTab()" class="bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <option value="1">ระดับชั้น ม.1</option>
+                                        <option value="2">ระดับชั้น ม.2</option>
+                                        <option value="3">ระดับชั้น ม.3</option>
+                                        <option value="4">ระดับชั้น ม.4</option>
+                                        <option value="5">ระดับชั้น ม.5</option>
+                                        <option value="6" selected>ระดับชั้น ม.6</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- ส่วนใส่ลิงก์ตารางเรียนภายนอก -->
+                            <div class="bg-purple-50/50 p-4 rounded-xl border border-purple-100 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-xs font-bold text-purple-800 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-link text-purple-600"></i>
+                                        <span>ลิงก์ตารางเรียนจากภายนอกประจำชั้น <span id="admin-selected-grade-label" class="underline">ม.6</span></span>
+                                    </p>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <input type="url" id="admin-schedule-link-input" placeholder="ใส่ URL เช่นลิงก์ Google Sheets, PDF หรือ Link ตารางสอนรูปภาพ" class="flex-grow bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-purple-500 text-slate-700 font-medium">
+                                    <button type="button" onclick="testCurrentScheduleLink()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-lg text-xs transition-all flex items-center justify-center space-x-1 shrink-0">
+                                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                        <span>ทดสอบลิงก์</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <form onsubmit="handleAdminUpdateSubjects(event)" class="space-y-4">
+                                <!-- ตารางกรอกค่าแยกรายวิชา จะเพิ่มฟิลด์หน่วยกิตควบคู่เข้าไป -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="admin-subjects-inputs-container">
+                                    <!-- ฟิลด์สำหรับแก้ไขจำนวนคาบและหน่วยกิตจะเรนเดอร์ผ่าน JS -->
+                                </div>
+                                <div class="flex justify-end pt-2">
+                                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-5 rounded-xl text-xs transition-all flex items-center space-x-1.5 shadow-md">
+                                        <i class="fa-solid fa-floppy-disk"></i>
+                                        <span>บันทึกและปรับโครงสร้างหลักสูตรชั้นปีนี้</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- แท็บที่ 3: จัดการรายชื่ออาจารย์ (Teachers List) -->
+                        <div id="admin-teachers-tab" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">สารบัญทำเนียบอาจารย์และผู้พิจารณา</h3>
+                                    <p class="text-xs text-slate-400">ตรวจสอบสิทธิ์การเข้าถึงและความรับผิดชอบของบุคลากรภายในระบบ</p>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto w-full border border-slate-100 rounded-xl">
+                                <table class="min-w-full divide-y divide-slate-200 text-xs text-left">
+                                    <thead class="bg-slate-50 text-slate-700 font-bold">
+                                        <tr>
+                                            <th class="px-6 py-3 text-slate-600">รหัสครู</th>
+                                            <th class="px-6 py-3 text-slate-600">ชื่อ - นามสกุลคุณครู</th>
+                                            <th class="px-6 py-3 text-slate-600">วิชาที่รับผิดชอบหลัก</th>
+                                            <th class="px-6 py-3 text-center text-slate-600">สิทธิ์พิจารณา</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-teachers-table-body" class="divide-y divide-slate-100 bg-white">
+                                        <!-- ข้อมูลอาจารย์จะเรนเดอร์ในนี้ด้วย Javascript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ส่วนท้ายเว็บ (Footer) -->
+        <footer class="bg-slate-800 text-slate-400 text-center py-4 border-t border-slate-700 text-xs">
+            <p>© 2026 ระบบการลาเรียนออนไลน์ โรงเรียนกุศลวิทยา • พัฒนาเพื่อการเรียนรู้และการบริหารโรงเรียนที่สะดวกรวดเร็ว</p>
+        </footer>
+    </div>
+
+    <!-- Modal ตั้งค่า URL ของ Apps Script Web App (ใช้เชื่อมต่อ/บันทึกข้อมูลลง Google Sheets) -->
+    <div id="script-url-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-indigo-50">
+                <h3 class="font-bold text-slate-800 flex items-center space-x-2">
+                    <i class="fa-solid fa-plug-circle-bolt text-indigo-500"></i>
+                    <span>ตั้งค่าการเชื่อมต่อ Google Sheets</span>
+                </h3>
+                <button onclick="closeScriptUrlModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-3">
+                <p class="text-xs text-slate-500">
+                    ใส่ URL ของ Google Apps Script Web App ที่ deploy ไว้ (ต้องลงท้ายด้วย <code>/exec</code>)
+                    ระบบจะใช้ URL นี้ในการโหลดและบันทึกข้อมูลลง Google Sheets ทุกครั้ง
+                </p>
+                <input type="url" id="script-url-input" placeholder="https://script.google.com/macros/s/XXXXXXX/exec"
+                    class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700">
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-2">
+                <button onclick="closeScriptUrlModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition-all">
+                    ยกเลิก
+                </button>
+                <button onclick="saveScriptUrlFromModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all">
+                    บันทึก
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- เทมเพลตรายละเอียดรูปภาพที่แนบ (Modal สำหรับดูหลักฐาน) -->
+    <div id="document-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-indigo-50">
+                <h3 class="font-bold text-slate-800 flex items-center space-x-2">
+                    <i class="fa-regular fa-file-image text-indigo-500"></i>
+                    <span>เอกสารหลักฐานประกอบการลา</span>
+                </h3>
+                <button onclick="closeDocumentModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 flex flex-col items-center justify-center">
+                <!-- จำลองการพรีวิวรูปภาพ -->
+                <div class="border-2 border-slate-200 rounded-xl p-4 bg-slate-50 w-full flex flex-col items-center justify-center text-center">
+                    <i class="fa-solid fa-id-card-clip text-6xl text-indigo-400 mb-3" id="modal-icon"></i>
+                    <p class="font-semibold font-medium text-slate-700" id="modal-file-name">ยังไม่ได้เลือกรูปภาพ</p>
+                    <p class="text-xs text-slate-400 mt-1">ไฟล์ได้รับการตรวจสอบความปลอดภัยและจัดเก็บเรียบร้อยแล้ว</p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button onclick="closeDocumentModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm transition-all">
+                    ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ส่วนจาวาสคริปต์ควบคุมการทำงาน (Controller) -->
+    <script>
+        // ==================== การเชื่อมต่อกับ Google Apps Script (Web App) ====================
+        // ไฟล์นี้เป็นไฟล์ HTML แบบสแตนด์อโลน (เปิดตรงๆ หรือฝากไว้บนเว็บโฮสต์ก็ได้)
+        // จึงเชื่อมต่อกับ Google Sheets ผ่านการเรียก URL ของ Apps Script Web App (.../exec) ด้วย fetch()
+        // แทนการใช้ google.script.run ซึ่งใช้ได้เฉพาะตอนไฟล์นี้ถูกเปิดจากภายใน Apps Script เท่านั้น
+
+        // ค่าเริ่มต้น: ใส่ URL ของเว็บแอป Apps Script ที่ deploy ไว้ (ลงท้ายด้วย /exec)
+        const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyoChIZKmyufjvKQDQsM6i29O2WZxTT1Fmw7YSKzjeKHeCXyOGexFIixdj90pYxmPcn/exec";
+
+        // ดึง URL ที่ใช้งานจริง: ถ้าผู้ใช้เคยตั้งค่าไว้ใน localStorage ให้ใช้ค่านั้นก่อน ไม่งั้นใช้ค่าเริ่มต้นด้านบน
+        function getScriptUrl() {
+            return localStorage.getItem('gasScriptUrl') || DEFAULT_SCRIPT_URL;
+        }
+
+        // บันทึก URL ใหม่ลง localStorage (เรียกจากหน้าต่างตั้งค่า)
+        function setScriptUrl(url) {
+            localStorage.setItem('gasScriptUrl', url.trim());
+        }
+
+        // เปิดหน้าต่างตั้งค่า URL พร้อมแสดงค่าปัจจุบัน
+        function openScriptUrlModal() {
+            document.getElementById('script-url-input').value = getScriptUrl();
+            document.getElementById('script-url-modal').classList.remove('hidden');
+        }
+
+        // ปิดหน้าต่างตั้งค่า URL
+        function closeScriptUrlModal() {
+            document.getElementById('script-url-modal').classList.add('hidden');
+        }
+
+        // บันทึก URL ที่กรอกในหน้าต่างตั้งค่า แล้วโหลดข้อมูลใหม่ทันที
+        function saveScriptUrlFromModal() {
+            const val = document.getElementById('script-url-input').value.trim();
+            if (!val || !val.startsWith('https://script.google.com/')) {
+                showToast("กรุณาใส่ URL ของ Apps Script Web App ให้ถูกต้อง (ต้องขึ้นต้นด้วย https://script.google.com/)", "error");
+                return;
+            }
+            setScriptUrl(val);
+            closeScriptUrlModal();
+            showToast("บันทึก URL การเชื่อมต่อเรียบร้อยแล้ว", "success");
+            loadAllData();
+        }
+
+        // ฟังก์ชันกลางสำหรับเรียกฟังก์ชันฝั่งเซิร์ฟเวอร์ใน Code.gs ทุกตัว
+        // ทำงานแทน google.script.run โดยยิง fetch() แบบ POST ไปยัง Web App URL
+        // ใช้ Content-Type: text/plain เพื่อให้เป็น "simple request" ไม่ติด CORS preflight ของ Apps Script
+        function callServer(fnName, args) {
+            const url = getScriptUrl();
+            if (!url) {
+                return Promise.reject(new Error("ยังไม่ได้ตั้งค่า URL ของ Apps Script Web App"));
+            }
+            return fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ fn: fnName, args: args || [] })
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data && data.error) {
+                        const err = new Error(data.error);
+                        throw err;
+                    }
+                    return data.result;
+                });
+        }
+
+        // ==================== ข้อมูลระบบ (โหลดจาก Google Sheets ผ่าน Google Apps Script) ====================
+        // ตัวแปรเหล่านี้เป็นเพียง "แคชฝั่งไคลเอนต์" เท่านั้น ต้นฉบับข้อมูลจริงอยู่ใน Google Sheets
+        // ห้ามแก้ไขตัวแปรเหล่านี้ตรงๆ อีกต่อไป ให้เรียก callServer(...) ไปที่ Code.gs แทน
+        // แล้วรอรับข้อมูลชุดใหม่ทั้งหมดกลับมาอัปเดตแคชนี้เสมอ (ดูฟังก์ชัน applyState)
+        let studentsList = [];
+        let gradeSubjects = {};
+        let leaveRequests = [];
+        let studentAttendanceData = {};
+        let teachersList = [];
+
+        // แทนที่ข้อมูลแคชทั้งหมดด้วยข้อมูลชุดล่าสุดที่ได้จากเซิร์ฟเวอร์ (Google Sheets)
+        function applyState(state) {
+            studentsList = state.studentsList || [];
+            gradeSubjects = state.gradeSubjects || {};
+            leaveRequests = state.leaveRequests || [];
+            studentAttendanceData = state.studentAttendanceData || {};
+            teachersList = state.teachersList || [];
+        }
+
+        // โหลดข้อมูลทั้งหมดจาก Google Sheets ใหม่อีกครั้ง (ใช้ทุกครั้งหลังบันทึก/แก้ไขข้อมูล)
+        function loadAllData(onDone, onError) {
+            callServer('getInitialData', [])
+                .then(function (state) {
+                    applyState(state);
+                    if (onDone) onDone();
+                })
+                .catch(function (err) {
+                    handleServerError(err);
+                    if (onError) onError(err);
+                });
+        }
+
+        // แสดงข้อความข้อผิดพลาดที่ส่งกลับมาจาก Google Apps Script ให้ผู้ใช้งานเห็นแบบเข้าใจง่าย
+        function handleServerError(err) {
+            console.error(err);
+            const msg = (err && err.message) ? err.message : String(err || "ไม่ทราบสาเหตุ");
+            showToast("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล: " + msg, "error");
+        }
+
+
+        // ตัวแปรเก็บข้อมูลผู้ใช้งานปัจจุบัน
+        let currentUser = {
+            role: "", // "student", "teacher", หรือ "admin"
+            name: "",
+            class: "",
+            id: ""
+        };
+
+        let selectedLeaveCategory = "";
+        let selectedFileName = "";
+
+        // เติมหมายเลขวัน (1-31) ลงในปุ่มตัวเลือกแบบไดนามิก
+        function populateDayDropdowns() {
+            const startDaySel = document.getElementById('start-day');
+            const endDaySel = document.getElementById('end-day');
+            
+            startDaySel.innerHTML = '<option value="">วัน (ที่)</option>';
+            endDaySel.innerHTML = '<option value="">วัน (ที่)</option>';
+            
+            for (let i = 1; i <= 31; i++) {
+                const opt1 = document.createElement('option');
+                opt1.value = i;
+                opt1.textContent = i;
+                startDaySel.appendChild(opt1);
+                
+                const opt2 = document.createElement('option');
+                opt2.value = i;
+                opt2.textContent = i;
+                endDaySel.appendChild(opt2);
+            }
+        }
+
+        // ดักจับการเปลี่ยนของตัวเลือกวันที่ เพื่อแสดงสถานะวันพุธ-พฤหัสบดี
+        function onDateDropdownChange() {
+            const sDay = document.getElementById('start-day').value;
+            const sMonth = document.getElementById('start-month').value;
+            const sYear = document.getElementById('start-year').value;
+            
+            const eDay = document.getElementById('end-day').value;
+            const eMonth = document.getElementById('end-month').value;
+            const eYear = document.getElementById('end-year').value;
+
+            const startBadge = document.getElementById('start-day-badge');
+            const endBadge = document.getElementById('end-day-badge');
+
+            if (sDay && sMonth && sYear) {
+                const gYear = parseInt(sYear) - 543;
+                const dateStr = `${gYear}-${String(sMonth).padStart(2, '0')}-${String(sDay).padStart(2, '0')}`;
+                const dayName = getThaiDayOfWeek(dateStr);
+                startBadge.innerText = dayName !== "-" ? `วัน${dayName}` : "";
+            } else {
+                startBadge.innerText = "";
+            }
+
+            if (eDay && eMonth && eYear) {
+                const gYear = parseInt(eYear) - 543;
+                const dateStr = `${gYear}-${String(eMonth).padStart(2, '0')}-${String(eDay).padStart(2, '0')}`;
+                const dayName = getThaiDayOfWeek(dateStr);
+                endBadge.innerText = dayName !== "-" ? `วัน${dayName}` : "";
+            } else {
+                endBadge.innerText = "";
+            }
+        }
+
+        // ตัวเลือกเหตุผลด่วน
+        function setQuickReason(text) {
+            document.getElementById('leave-reason').value = text;
+            showToast("เติมเหตุผลการลาอัตโนมัติแล้ว", "info");
+        }
+
+        // สลับแท็บในหน้า Portal ก่อนเข้าระบบ (นักเรียน / อาจารย์ / แอดมิน)
+        function switchPortalTab(role) {
+            const tabStudent = document.getElementById('portal-tab-student');
+            const tabTeacher = document.getElementById('portal-tab-teacher');
+            const tabAdmin = document.getElementById('portal-tab-admin');
+            
+            const formStudent = document.getElementById('portal-student-form');
+            const formTeacher = document.getElementById('portal-teacher-form');
+            const formAdmin = document.getElementById('portal-admin-form');
+
+            // รีเซ็ตคลาสปุ่มทั้งหมด
+            tabStudent.className = "flex-1 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-800 transition-all flex items-center justify-center space-x-1";
+            tabTeacher.className = "flex-1 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-800 transition-all flex items-center justify-center space-x-1";
+            tabAdmin.className = "flex-1 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-800 transition-all flex items-center justify-center space-x-1";
+            
+            formStudent.classList.add('hidden');
+            formTeacher.classList.add('hidden');
+            formAdmin.classList.add('hidden');
+
+            if (role === 'student') {
+                tabStudent.className = "flex-1 py-2 rounded-lg text-xs font-bold text-indigo-600 bg-white shadow-sm transition-all flex items-center justify-center space-x-1";
+                formStudent.classList.remove('hidden');
+            } else if (role === 'teacher') {
+                tabTeacher.className = "flex-1 py-2 rounded-lg text-xs font-bold text-slate-800 bg-white shadow-sm transition-all flex items-center justify-center space-x-1";
+                formTeacher.classList.remove('hidden');
+            } else if (role === 'admin') {
+                tabAdmin.className = "flex-1 py-2 rounded-lg text-xs font-bold text-purple-700 bg-white shadow-sm transition-all flex items-center justify-center space-x-1";
+                formAdmin.classList.remove('hidden');
+            }
+        }
+
+        // ฟังก์ชันเมื่อกดเข้าใช้งานจากหน้า Portal (หน้าแรก)
+        function handlePortalLogin(event, role) {
+            event.preventDefault();
+
+            // เปิดหน้าแอปหลักและโหลดข้อมูลล่าสุดจาก Google Sheets ทุกครั้งที่มีการเข้าสู่ระบบ
+            function enterApp() {
+                document.getElementById('portal-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                switchRole(role);
+                loadAllData(function () { renderData(); });
+            }
+
+            if (role === 'student') {
+                const name = document.getElementById('portal-name').value.trim();
+                const studentClass = document.getElementById('portal-class').value;
+                const studentId = document.getElementById('portal-id').value.trim();
+
+                if (!name || !studentClass || !studentId) {
+                    showToast("กรุณากรอกข้อมูลนักเรียนให้ครบถ้วนก่อนเข้าใช้งาน", "error");
+                    return;
+                }
+
+                // ตรวจสอบ/ลงทะเบียนนักเรียนกับฐานข้อมูลจริงใน Google Sheets
+                // หมายเหตุ (แก้บัค): เดิมระบบเชื่อชื่อ/ชั้นที่พิมพ์เข้ามาทันทีโดยไม่ตรวจกับทะเบียน
+                // ทำให้รหัสนักเรียนเดียวกันแสดงชื่อ/ชั้นไม่ตรงกันได้ในแต่ละครั้งที่ล็อกอิน
+                // ตอนนี้ถ้ารหัสนักเรียนมีอยู่แล้ว ระบบจะใช้ชื่อ/ชั้นตามทะเบียนเป็นหลักเสมอ
+                callServer('loginOrRegisterStudent', [studentId, name, studentClass])
+                    .then(function (result) {
+                        currentUser = {
+                            role: "student",
+                            name: result.name,
+                            class: String(result.class),
+                            id: String(result.id)
+                        };
+
+                        if (result.name !== name || String(result.class) !== String(studentClass)) {
+                            showToast("พบรหัสนักเรียนนี้ในระบบแล้ว ใช้ข้อมูลตามทะเบียน: " + result.name + " ม." + result.class, "info");
+                        }
+
+                        document.getElementById('display-student-name').innerText = currentUser.name;
+                        document.getElementById('display-student-info').innerText = `ชั้น ม.${currentUser.class} | รหัสนักเรียน: ${currentUser.id}`;
+                        document.getElementById('history-filter-notice').innerText = `(แสดงประวัติการยื่นใบลาเฉพาะของ ${currentUser.name})`;
+
+                        enterApp();
+                        showToast("ยินดีต้อนรับคุณ " + currentUser.name + " เข้าสู่ระบบ", "success");
+                    })
+                    .catch(handleServerError);
+
+            } else if (role === 'teacher') {
+                const teacherName = document.getElementById('portal-teacher-name').value.trim();
+                currentUser = {
+                    role: "teacher",
+                    name: teacherName || "อาจารย์ปัญญา ประเสริฐวิทย์",
+                    class: "",
+                    id: ""
+                };
+
+                enterApp();
+                showToast("เข้าสู่ระบบในฐานะอาจารย์: " + currentUser.name, "info");
+
+            } else if (role === 'admin') {
+                const adminName = document.getElementById('portal-admin-name').value.trim();
+                currentUser = {
+                    role: "admin",
+                    name: adminName || "ผู้ดูแลระบบกุศลวิทยา",
+                    class: "",
+                    id: "ADMIN-001"
+                };
+
+                enterApp();
+                showToast("เข้าใช้งานในฐานะผู้ดูแลระบบ (Admin)", "success");
+            }
+        }
+
+        // ออกจากระบบกลับไปหน้าหลัก
+        function logOut() {
+            document.getElementById('portal-name').value = "";
+            document.getElementById('portal-class').selectedIndex = 0;
+            document.getElementById('portal-id').value = "";
+            
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('portal-screen').classList.remove('hidden');
+            
+            currentUser = { role: "", name: "", class: "", id: "" };
+            showToast("ออกจากระบบเรียบร้อยแล้ว", "info");
+        }
+
+        // ฟังก์ชันสลับบทบาทหน้าจอด้านใน (สนับสนุน Student / Teacher / Admin)
+        function switchRole(role) {
+            const studentBtn = document.getElementById('btn-student-role');
+            const teacherBtn = document.getElementById('btn-teacher-role');
+            const adminBtn = document.getElementById('btn-admin-role');
+            
+            const studentSection = document.getElementById('student-section');
+            const teacherSection = document.getElementById('teacher-section');
+            const adminSection = document.getElementById('admin-section');
+
+            // ล้างคลาสปุ่มทั้งหมด
+            studentBtn.className = "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all text-indigo-200 hover:text-white";
+            teacherBtn.className = "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all text-indigo-200 hover:text-white";
+            adminBtn.className = "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all text-indigo-200 hover:text-white";
+
+            studentSection.classList.add('hidden');
+            teacherSection.classList.add('hidden');
+            adminSection.classList.add('hidden');
+
+            if (role === 'student') {
+                studentBtn.className = "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all bg-white text-indigo-700 shadow";
+                studentSection.classList.remove('hidden');
+            } else if (role === 'teacher') {
+                teacherBtn.className = "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all bg-white text-indigo-700 shadow";
+                teacherSection.classList.remove('hidden');
+            } else if (role === 'admin') {
+                adminBtn.className = "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all bg-white text-indigo-700 shadow";
+                adminSection.classList.remove('hidden');
+            }
+            renderData();
+        }
+
+        // ฟังก์ชันแสดงการเลือกประเภทการลาในฟอร์ม
+        function selectLeaveType(type) {
+            const labelSick = document.getElementById('label-sick');
+            const labelPersonal = document.getElementById('label-personal');
+            const labelOther = document.getElementById('label-other');
+
+            labelSick.className = "border-2 border-slate-200 rounded-xl p-2 text-center cursor-pointer hover:border-indigo-500 transition-all flex flex-col items-center gap-1";
+            labelPersonal.className = "border-2 border-slate-200 rounded-xl p-2 text-center cursor-pointer hover:border-indigo-500 transition-all flex flex-col items-center gap-1";
+            labelOther.className = "border-2 border-slate-200 rounded-xl p-2 text-center cursor-pointer hover:border-indigo-500 transition-all flex flex-col items-center gap-1";
+
+            if (type === 'sick') {
+                labelSick.className = "border-2 border-rose-500 bg-rose-50 rounded-xl p-2 text-center cursor-pointer transition-all flex flex-col items-center gap-1";
+                selectedLeaveCategory = "ลาป่วย";
+            } else if (type === 'personal') {
+                labelPersonal.className = "border-2 border-amber-500 bg-amber-50 rounded-xl p-2 text-center cursor-pointer transition-all flex flex-col items-center gap-1";
+                selectedLeaveCategory = "ลากิจ";
+            } else if (type === 'other') {
+                labelOther.className = "border-2 border-sky-500 bg-sky-50 rounded-xl p-2 text-center cursor-pointer transition-all flex flex-col items-center gap-1";
+                selectedLeaveCategory = "อื่นๆ";
+            }
+        }
+
+        // ฟังก์ชันเมื่อผู้ใช้งานเลือกแนบไฟล์
+        function handleFileSelected(event) {
+            const file = event.target.files[0];
+            const label = document.getElementById('file-upload-label');
+            if (file) {
+                selectedFileName = file.name;
+                label.innerText = `แนบไฟล์สำเร็จ: ${file.name}`;
+                label.className = "text-xs font-bold text-indigo-600 animate-pulse";
+            }
+        }
+
+        // ฟังก์ชันยื่นแบบฟอร์มใบลาเรียน
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            const sDay = document.getElementById('start-day').value;
+            const sMonth = document.getElementById('start-month').value;
+            const sYear = document.getElementById('start-year').value;
+            
+            const eDay = document.getElementById('end-day').value;
+            const eMonth = document.getElementById('end-month').value;
+            const eYear = document.getElementById('end-year').value;
+
+            const reason = document.getElementById('leave-reason').value;
+            const subject = document.getElementById('leave-subject-select').value;
+
+            if (!sDay || !sMonth || !sYear || !eDay || !eMonth || !eYear) {
+                showToast("กรุณาระบุข้อมูลวันที่ให้ครบถ้วนในทุกช่อง", "error");
+                return;
+            }
+
+            const gStartYear = parseInt(sYear) - 543;
+            const gEndYear = parseInt(eYear) - 543;
+
+            const startDate = `${gStartYear}-${String(sMonth).padStart(2, '0')}-${String(sDay).padStart(2, '0')}`;
+            const endDate = `${gEndYear}-${String(eMonth).padStart(2, '0')}-${String(eDay).padStart(2, '0')}`;
+
+            if (new Date(startDate) > new Date(endDate)) {
+                showToast("วันที่เริ่มต้น ต้องไม่เกิน วันที่สิ้นสุดการลา", "error");
+                return;
+            }
+
+            const payload = {
+                studentId: currentUser.id,
+                studentName: currentUser.name,
+                studentClass: currentUser.class.toString().startsWith('ม.') ? currentUser.class : `ม.${currentUser.class}`,
+                type: selectedLeaveCategory || "อื่นๆ",
+                startDate: startDate,
+                endDate: endDate,
+                reason: reason,
+                subject: subject,
+                attachmentName: selectedFileName || ""
+            };
+
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            // บันทึกใบลาลง Google Sheets ผ่าน Code.gs (ต้นทางข้อมูลจริงของระบบ)
+            callServer('submitLeaveRequest', [payload])
+                .then(function (state) {
+                    applyState(state);
+                    showToast(`ส่งใบลาเรียนของ ${currentUser.name} เรียบร้อยแล้ว`, "success");
+
+                    // รีเซ็ตค่าตัวเลือก (ทำเฉพาะเมื่อบันทึกสำเร็จเท่านั้น)
+                    document.getElementById('start-day').value = "";
+                    document.getElementById('start-month').value = "";
+                    document.getElementById('start-year').value = "";
+                    document.getElementById('end-day').value = "";
+                    document.getElementById('end-month').value = "";
+                    document.getElementById('end-year').value = "";
+
+                    document.getElementById('start-day-badge').innerText = "";
+                    document.getElementById('end-day-badge').innerText = "";
+                    document.getElementById('leave-reason').value = "";
+                    document.getElementById('leave-file').value = "";
+                    document.getElementById('leave-subject-select').selectedIndex = 0;
+
+                    selectedLeaveCategory = "";
+                    selectedFileName = "";
+                    document.getElementById('file-upload-label').innerText = "คลิกหรือลากไฟล์ภาพใบรับรองแพทย์ / ใบขออนุญาตมาวาง";
+                    document.getElementById('file-upload-label').className = "text-xs text-slate-500";
+                    selectLeaveType('');
+
+                    if (submitBtn) submitBtn.disabled = false;
+                    renderData();
+                })
+                .catch(function (err) {
+                    if (submitBtn) submitBtn.disabled = false;
+                    handleServerError(err);
+                });
+        }
+
+        // ฟังก์ชันประมวลผลคำขอ (อนุมัติ / ไม่อนุมัติ) สำหรับอาจารย์
+        function processRequest(id, newStatus) {
+            const index = leaveRequests.findIndex(req => req.id === id);
+            if (index === -1) return;
+            const studentName = leaveRequests[index].studentName;
+
+            // หมายเหตุ (แก้บัค): เดิมเมื่ออนุมัติจะบวก "1" ให้กับจำนวนครั้งลาเสมอ ไม่ว่าใบลาจะยาวกี่วัน
+            // ตอนนี้ Code.gs จะคำนวณจำนวนวันทำการ (จันทร์-ศุกร์) ระหว่างวันที่เริ่ม-สิ้นสุดให้ถูกต้องแทน
+            callServer('processLeaveRequest', [id, newStatus])
+                .then(function (state) {
+                    applyState(state);
+                    if (newStatus === "อนุมัติแล้ว") {
+                        showToast(`อนุมัติคำขอของ ${studentName} สำเร็จ และอัปเดตสถิติเวลาเรียนแล้ว`, "success");
+                    } else {
+                        showToast(`ปฏิเสธคำขอของ ${studentName} เรียบร้อย`, "error");
+                    }
+                    renderData();
+                })
+                .catch(handleServerError);
+        }
+
+        // คุณครูจำลองการเช็คชื่อเข้าเรียนและขาดเรียนรายวิชา
+        function submitTeacherRollCall() {
+            const sId = document.getElementById('teacher-roll-student').value;
+            const subject = document.getElementById('teacher-roll-subject').value;
+            const status = document.getElementById('teacher-roll-status').value;
+
+            if (!sId) {
+                showToast("กรุณาเลือกนักเรียนก่อนบันทึก", "error");
+                return;
+            }
+
+            callServer('submitTeacherRollCallApi', [sId, subject, status])
+                .then(function (result) {
+                    applyState(result.state);
+                    if (status === "absent") {
+                        showToast(`จำลองบันทึก "ขาดเรียน" วิชา ${subject} สำเร็จ`, "error");
+                    } else if (result.changed) {
+                        showToast(`ล้างยอดขาดเรียนวิชา ${subject} สำเร็จ`, "success");
+                    } else {
+                        showToast(`นักเรียนมีประวัติเข้าเรียนปกติอยู่แล้ว`, "info");
+                    }
+                    renderData();
+                })
+                .catch(handleServerError);
+        }
+
+        // ฟังก์ชันลบใบลา
+        function deleteRequest(id) {
+            const index = leaveRequests.findIndex(req => req.id === id);
+            if (index === -1) return;
+            const name = leaveRequests[index].studentName;
+
+            callServer('deleteLeaveRequestApi', [id])
+                .then(function (state) {
+                    applyState(state);
+                    showToast(`ลบข้อมูลคำขอลาของ ${name} สำเร็จ`, "success");
+                    renderData();
+                })
+                .catch(handleServerError);
+        }
+
+        // ฟังก์ชันวาดข้อมูลลงใน UI ทั้งหมด
+        function renderData() {
+            renderStudentHistory();
+            renderTeacherDashboard();
+            renderAdminDashboard();
+        }
+
+        // แปลงวันที่เป็นชื่อวันในสัปดาห์
+        function getThaiDayOfWeek(dateString) {
+            if (!dateString) return "-";
+            const days = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+            const dateObj = new Date(dateString);
+            if (isNaN(dateObj.getTime())) return "-";
+            return days[dateObj.getDay()];
+        }
+
+        // แปลงวันที่ให้แสดงผลเป็นเลขล้วน เช่น 14/07/2569
+        function formatNumericThaiDate(dateString) {
+            if (!dateString) return "-";
+            const dateObj = new Date(dateString);
+            if (isNaN(dateObj.getTime())) return dateString;
+
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear() + 543;
+
+            return `${day}/${month}/${year}`;
+        }
+
+        // เรนเดอร์ข้อมูลใบลาและสถิติต่าง ๆ ในฝั่งนักเรียน
+        function renderStudentHistory() {
+            const tbody = document.getElementById('student-history-table-body');
+            const subjectsTbody = document.getElementById('student-subjects-table-body');
+            const searchName = currentUser.name.trim();
+            const sId = currentUser.id;
+            const sClass = currentUser.class || "6"; // ดึงชั้นเรียนปัจจุบันของนักเรียน
+            
+            const myRequests = sId ? leaveRequests.filter(req => String(req.studentId) === String(sId)) : [];
+            document.getElementById('student-request-count').innerText = myRequests.length;
+
+            let sickCount = 0;
+            let personalCount = 0;
+            let otherCount = 0;
+            let totalAbsentCount = 0;
+
+            if (sId && studentAttendanceData[sId]) {
+                for (let key in studentAttendanceData[sId]) {
+                    totalAbsentCount += studentAttendanceData[sId][key].absent;
+                }
+            }
+
+            myRequests.forEach(req => {
+                if (req.type === "ลาป่วย") sickCount++;
+                else if (req.type === "ลากิจ") personalCount++;
+                else otherCount++;
+            });
+
+            document.getElementById('student-stat-sick').innerText = sickCount;
+            document.getElementById('student-stat-personal').innerText = personalCount;
+            document.getElementById('student-stat-other').innerText = otherCount;
+            document.getElementById('student-stat-absent').innerText = totalAbsentCount;
+            document.getElementById('student-stat-total').innerText = `${sickCount + personalCount + otherCount + totalAbsentCount} ครั้ง`;
+
+            // ตารางสถิติเวลาเรียนรายวิชาใหม่ (สอดคล้องกับระดับชั้นของนักเรียน)
+            if (sId && studentAttendanceData[sId]) {
+                let currentAttendance = studentAttendanceData[sId];
+                let overallTotalClass = 0;
+                let overallAttended = 0;
+                let subjectRowsHtml = "";
+
+                // ดึงข้อมูลวิชา คาบเรียน และหน่วยกิตของระดับชั้นนักเรียน
+                const classGradeData = gradeSubjects[sClass] || gradeSubjects["6"];
+
+                for (let subName in currentAttendance) {
+                    let subData = currentAttendance[subName];
+                    
+                    // ค้นหารายละเอียดรายวิชาจากฐานข้อมูลระดับชั้น ม. นั้นๆ
+                    const subMeta = classGradeData.subjects[subName] || { periods: 40, credits: 1.0 };
+                    let totalPeriod = subMeta.periods;
+                    let credits = subMeta.credits;
+                    
+                    let attended = totalPeriod - subData.leave - subData.absent;
+                    if (attended < 0) attended = 0;
+
+                    overallTotalClass += totalPeriod;
+                    overallAttended += attended;
+
+                    let percentage = (attended / totalPeriod) * 100;
+                    if (percentage < 0) percentage = 0;
+
+                    let eligibilityBadge = "";
+                    let eligibilityBg = "";
+                    if (percentage >= 80) {
+                        eligibilityBadge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-lg text-xs"><i class="fa-solid fa-circle-check mr-1"></i>มีสิทธิ์สอบ</span>`;
+                        eligibilityBg = "text-emerald-600";
+                    } else {
+                        eligibilityBadge = `<span class="bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded-lg text-xs animate-pulse"><i class="fa-solid fa-triangle-exclamation mr-1"></i>เสี่ยงขาดสอบ</span>`;
+                        eligibilityBg = "text-rose-600";
+                    }
+
+                    subjectRowsHtml += `
+                        <tr class="hover:bg-slate-50/50 transition-colors">
+                            <td class="px-6 py-3.5 font-bold text-slate-800">${subName}</td>
+                            <td class="px-6 py-3.5 text-center font-mono text-slate-700 font-bold bg-indigo-50/30">${credits.toFixed(1)} หน่วยกิต</td>
+                            <td class="px-6 py-3.5 text-center font-mono text-slate-500 font-bold">${totalPeriod} คาบ</td>
+                            <td class="px-6 py-3.5 text-center font-mono font-bold text-emerald-600 bg-emerald-50/20">${attended}</td>
+                            <td class="px-6 py-3.5 text-center font-mono font-bold text-amber-600 bg-amber-50/20">${subData.leave}</td>
+                            <td class="px-6 py-3.5 text-center font-mono font-bold text-red-600 bg-rose-50/20">${subData.absent}</td>
+                            <td class="px-6 py-3.5 whitespace-nowrap">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-24 bg-slate-200 rounded-full h-2">
+                                        <div class="h-2 rounded-full ${percentage >= 80 ? 'bg-emerald-500' : 'bg-rose-500'}" style="width: ${percentage}%"></div>
+                                    </div>
+                                    <span class="font-bold text-xs ${eligibilityBg} font-mono">${percentage.toFixed(1)}%</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-3.5 text-center whitespace-nowrap">${eligibilityBadge}</td>
+                        </tr>
+                    `;
+                }
+
+                subjectsTbody.innerHTML = subjectRowsHtml;
+
+                let totalPercentage = (overallAttended / overallTotalClass) * 100;
+                document.getElementById('student-attendance-rate').innerText = `${totalPercentage.toFixed(1)}%`;
+                document.getElementById('student-attendance-ring').innerText = `${Math.round(totalPercentage)}%`;
+                
+                const ringEl = document.getElementById('student-attendance-ring');
+                if (totalPercentage >= 80) {
+                    ringEl.className = "w-10 h-10 rounded-full border-2 border-emerald-400 flex items-center justify-center font-bold text-[10px] text-emerald-300 shadow-inner";
+                } else {
+                    ringEl.className = "w-10 h-10 rounded-full border-2 border-rose-400 flex items-center justify-center font-bold text-[10px] text-rose-300 shadow-inner animate-pulse";
+                }
+            }
+
+            // เรนเดอร์ปุ่มตารางเรียนจากลิงก์ภายนอกตามระดับชั้น (ม.1 - ม.6)
+            const scheduleBtnContainer = document.getElementById('student-schedule-button-container');
+            if (scheduleBtnContainer) {
+                const myClass = currentUser.class || "6";
+                const classData = gradeSubjects[myClass];
+                const myScheduleUrl = classData ? classData.scheduleUrl : "";
+                
+                if (myScheduleUrl) {
+                    scheduleBtnContainer.innerHTML = `
+                        <a href="${myScheduleUrl}" target="_blank" class="bg-amber-400 hover:bg-amber-500 text-slate-900 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow flex items-center space-x-1.5 border border-amber-300">
+                            <i class="fa-solid fa-calendar-days text-sm"></i>
+                            <span>ตารางเรียน ม.${myClass}</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-75"></i>
+                        </a>
+                    `;
+                } else {
+                    scheduleBtnContainer.innerHTML = `
+                        <button disabled class="bg-white/10 text-white/50 px-4 py-2 rounded-xl text-xs font-semibold cursor-not-allowed flex items-center space-x-1.5 border border-white/10" title="ยังไม่มีการอัปโหลดลิงก์สำหรับ ม.${myClass}">
+                            <i class="fa-solid fa-calendar-times text-sm"></i>
+                            <span>ไม่มีตารางเรียน ม.${myClass}</span>
+                        </button>
+                    `;
+                }
+            }
+
+            if (myRequests.length === 0 || !searchName) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="px-6 py-12 text-center text-slate-400">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <i class="fa-solid fa-box-open text-3xl text-slate-300"></i>
+                                <p class="font-medium">ไม่พบประวัติการยื่นคำขอลาเรียนในระบบสำหรับชื่อนี้</p>
+                                <p class="text-xs text-slate-400">สามารถส่งใบลาในวิชาต่าง ๆ ได้ทางแบบฟอร์มด้านซ้าย</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = myRequests.map(req => {
+                let typeBadge = "bg-rose-50 text-rose-600 border border-rose-100";
+                if (req.type === "ลากิจ") typeBadge = "bg-amber-50 text-amber-600 border border-amber-100";
+                if (req.type === "อื่นๆ") typeBadge = "bg-sky-50 text-sky-600 border border-sky-100";
+
+                let dayDisplay = getThaiDayOfWeek(req.startDate) + (req.startDate !== req.endDate ? ` - ${getThaiDayOfWeek(req.endDate)}` : '');
+                let dateDisplay = formatNumericThaiDate(req.startDate) + (req.startDate !== req.endDate ? ` - ${formatNumericThaiDate(req.endDate)}` : '');
+
+                let statusBadge = "bg-amber-50 text-amber-700 border border-amber-100";
+                let statusIcon = "fa-hourglass-half";
+                if (req.status === "อนุมัติแล้ว") {
+                    statusBadge = "bg-emerald-50 text-emerald-700 border-emerald-100";
+                    statusIcon = "fa-circle-check";
+                } else if (req.status === "ปฏิเสธ") {
+                    statusBadge = "bg-rose-50 text-rose-700 border border-rose-100";
+                    statusIcon = "fa-circle-xmark";
+                }
+
+                let commentBubble = req.status === "รออนุมัติ" 
+                    ? `<span class="text-slate-400 italic text-[11px]"><i class="fa-regular fa-clock mr-1"></i>รอพิจารณา...</span>`
+                    : `<div class="p-2 border rounded-lg text-xs leading-relaxed max-w-[200px] font-medium ${req.status === "อนุมัติแล้ว" ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'} flex items-start gap-1">
+                            <i class="fa-regular fa-comment-dots text-indigo-500 mt-0.5 shrink-0"></i>
+                            <span class="break-words">${req.teacherComment || "-"}</span>
+                       </div>`;
+
+                return `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="px-4 py-3.5 whitespace-nowrap"><span class="px-2.5 py-1 rounded-lg text-xs font-bold ${typeBadge}">${req.type}</span></td>
+                        <td class="px-4 py-3.5 whitespace-nowrap font-bold text-slate-700 text-xs"><i class="fa-solid fa-bookmark text-indigo-500 mr-1.5"></i>${req.subject || "ทุกวิชา"}</td>
+                        <td class="px-4 py-3.5 whitespace-nowrap font-medium text-slate-700">${dayDisplay}</td>
+                        <td class="px-4 py-3.5 whitespace-nowrap text-xs text-slate-600 font-mono">${dateDisplay}</td>
+                        <td class="px-4 py-3.5 min-w-[150px] text-xs text-slate-600 max-w-xs truncate" title="${req.reason}">${req.reason}</td>
+                        <td class="px-4 py-3.5">${commentBubble}</td>
+                        <td class="px-4 py-3.5 whitespace-nowrap text-xs">
+                            ${req.attachmentName ? `<button onclick="openDocumentModal('${req.attachmentName}')" class="text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1"><i class="fa-solid fa-paperclip"></i> มีไฟล์</button>` : `<span class="text-slate-400">-</span>`}
+                        </td>
+                        <td class="px-4 py-3.5 whitespace-nowrap">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge} inline-flex items-center gap-1">
+                                <i class="fa-solid ${statusIcon}"></i>
+                                <span>${req.status}</span>
+                            </span>
+                        </td>
+                        <td class="px-4 py-3.5 whitespace-nowrap text-center text-xs">
+                            ${req.status === "รออนุมัติ" ? `<button onclick="deleteRequest('${req.id}')" class="text-rose-500 hover:bg-rose-50 hover:text-rose-700 p-1.5 rounded-lg transition-all" title="ยกเลิกใบลา"><i class="fa-solid fa-trash-can text-sm"></i></button>` : `<span class="text-slate-400">-</span>`}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // เรนเดอร์หน้าจอฝั่งอาจารย์ผู้พิจารณา
+        function renderTeacherDashboard() {
+            const total = leaveRequests.length;
+            const pending = leaveRequests.filter(req => req.status === "รออนุมัติ").length;
+            const approved = leaveRequests.filter(req => req.status === "อนุมัติแล้ว").length;
+            const rejected = leaveRequests.filter(req => req.status === "ปฏิเสธ").length;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-pending').innerText = pending;
+            document.getElementById('stat-approved').innerText = approved;
+            document.getElementById('stat-rejected').innerText = rejected;
+            
+            // ตรวจสอบและตั้งค่าข้อความแสดงรายการที่รอนุมัติ
+            const pendingBadge = document.getElementById('pending-badge-count');
+            if (pendingBadge) {
+                pendingBadge.innerText = `รอการตัดสินใจ ${pending} รายการ`;
+            }
+
+            // ดึงตัวเลือกรายชื่อนักเรียนเช็คชื่อจำลอง (รวมนักเรียนทั้งหมดจากทะเบียน)
+            const rollSelect = document.getElementById('teacher-roll-student');
+            if (rollSelect) {
+                rollSelect.innerHTML = studentsList.map(s => `<option value="${s.id}">${s.name} (รหัส ${s.id})</option>`).join('');
+            }
+
+            // กล่องข้อความรออนุมัติใบลา
+            const pendingContainer = document.getElementById('teacher-pending-list');
+            const pendingRequests = leaveRequests.filter(req => req.status === "รออนุมัติ");
+
+            if (pendingContainer) {
+                if (pendingRequests.length === 0) {
+                    pendingContainer.innerHTML = `
+                        <div class="text-center py-16 text-slate-400">
+                            <i class="fa-solid fa-circle-check text-4xl mb-2 text-emerald-400"></i>
+                            <p class="font-bold text-slate-700">ไม่มีรายการคำขอลาเรียนตกค้าง!</p>
+                            <p class="text-xs mt-1">วันนี้คุณครูได้พิจารณาครบทั้งหมดเรียบร้อยแล้ว</p>
+                        </div>
+                    `;
+                } else {
+                    pendingContainer.innerHTML = pendingRequests.map(req => {
+                        let typeColor = "bg-rose-50 text-rose-600 border border-rose-200";
+                        if (req.type === "ลากิจ") typeColor = "bg-amber-50 text-amber-600 border border-amber-200";
+                        if (req.type === "อื่นๆ") typeColor = "bg-sky-50 text-sky-600 border border-sky-200";
+
+                        const dayDisplay = getThaiDayOfWeek(req.startDate) + (req.startDate !== req.endDate ? ` - ${getThaiDayOfWeek(req.endDate)}` : '');
+                        const dateDisplay = formatNumericThaiDate(req.startDate) + (req.startDate !== req.endDate ? ` - ${formatNumericThaiDate(req.endDate)}` : '');
+
+                        return `
+                            <div class="bg-slate-50 border border-slate-100 p-5 rounded-xl shadow-sm space-y-4 hover:border-indigo-200 transition-all animate-fade-in">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-sm shadow-inner">
+                                            ${req.studentName ? req.studentName.charAt(0) : "น"}
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-slate-800 text-sm">${req.studentName}</h4>
+                                            <p class="text-[11px] text-slate-500">ชั้น ${req.studentClass} | รหัสนักเรียน: ${req.studentId} • ส่งคำขอเมื่อ ${req.submitDate}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${typeColor}">${req.type}</span>
+                                        <p class="text-[10px] text-indigo-600 font-bold mt-1"><i class="fa-solid fa-book mr-0.5"></i>วิชา: ${req.subject || "ทุกวิชา"}</p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-3 rounded-lg border border-slate-100 text-xs text-slate-700 space-y-2">
+                                    <p class="font-semibold text-indigo-700">
+                                        <i class="fa-regular fa-calendar-days mr-1.5"></i>วัน: ${dayDisplay} (${dateDisplay})
+                                    </p>
+                                    <p><strong>เหตุผลความจำเป็น:</strong> ${req.reason}</p>
+                                    ${req.attachmentName ? `
+                                        <div class="pt-2 border-t border-slate-100 flex items-center">
+                                            <button onclick="openDocumentModal('${req.attachmentName}')" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1.5">
+                                                <i class="fa-solid fa-paperclip"></i> แนบไฟล์: ${req.attachmentName} (คลิกดูภาพหลักฐาน)
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <div class="flex justify-end gap-2 pt-1">
+                                    <button onclick="processRequest('${req.id}', 'ปฏิเสธ')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg transition-all flex items-center space-x-1">
+                                        <i class="fa-solid fa-xmark"></i>
+                                        <span>ไม่อนุมัติ</span>
+                                    </button>
+                                    <button onclick="processRequest('${req.id}', 'อนุมัติแล้ว')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-lg shadow transition-all flex items-center space-x-1">
+                                        <i class="fa-solid fa-check"></i>
+                                        <span>อนุมัติให้ลา</span>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // สถิตินักเรียนกลุ่มเสี่ยง (ขาดเยอะ หรือ ลาบ่อย)
+            const alertList = document.getElementById('teacher-alert-list');
+            if (alertList) {
+                let alertHtml = "";
+                studentsList.forEach(s => {
+                    let sId = s.id;
+                    let totalAbsent = 0;
+                    let totalLeave = 0;
+                    if (studentAttendanceData[sId]) {
+                        for (let key in studentAttendanceData[sId]) {
+                            totalAbsent += studentAttendanceData[sId][key].absent;
+                            totalLeave += studentAttendanceData[sId][key].leave;
+                        }
+                    }
+                    
+                    // หากขาดตั้งแต่ 4 ครั้งขึ้นไป หรือลากลุ่มเสี่ยง
+                    if (totalAbsent >= 4 || totalLeave >= 5) {
+                        alertHtml += `
+                            <div class="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 last:border-0">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-6 h-6 rounded-full bg-rose-50 text-rose-600 font-bold flex items-center justify-center text-[10px]">${s.class}</div>
+                                    <div>
+                                        <p class="font-bold text-slate-800">${s.name}</p>
+                                        <p class="text-slate-500 text-[10px]">รหัส: ${sId} | ขาด ${totalAbsent} คาบ | ลา ${totalLeave} ครั้ง</p>
+                                    </div>
+                                </div>
+                                <span class="bg-rose-50 text-rose-600 font-bold px-2 py-0.5 rounded-full text-[9px]">เสี่ยงขาดสอบ</span>
+                            </div>
+                        `;
+                    }
+                });
+                alertList.innerHTML = alertHtml || `<p class="text-center py-4 text-slate-400">ยังไม่มีรายชื่อนักเรียนกลุ่มเสี่ยงในขณะนี้</p>`;
+            }
+
+            // ประวัติที่ดำเนินการเสร็จสิ้นด้านขวา
+            const processedContainer = document.getElementById('teacher-processed-list');
+            const processedRequests = leaveRequests.filter(req => req.status !== "รออนุมัติ");
+
+            if (processedContainer) {
+                if (processedRequests.length === 0) {
+                    processedContainer.innerHTML = `<div class="text-center py-4 text-slate-400"><p class="text-[10px]">ยังไม่มีรายการประวัติ</p></div>`;
+                } else {
+                    processedContainer.innerHTML = processedRequests.map(req => {
+                        const icon = req.status === "อนุมัติแล้ว" 
+                            ? '<i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>' 
+                            : '<i class="fa-solid fa-circle-xmark text-rose-500 text-sm"></i>';
+
+                        return `
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center justify-between gap-3 animate-fade-in">
+                                <div class="flex items-center space-x-2">
+                                    ${icon}
+                                    <div>
+                                        <p class="font-bold text-slate-800 text-[11px]">${req.studentName}</p>
+                                        <p class="text-[9px] text-slate-500">${req.type} | วิชา: ${req.subject || "ทุกวิชา"} | ${formatNumericThaiDate(req.startDate)}</p>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-semibold">
+                                    ${req.status}
+                                </span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
+
+        // ==================== [ฟังก์ชันสำหรับระบบแอดมิน] ====================
+
+        // สลับประเภทข้อมูลแท็บฝั่งแอดมิน (รายชื่อนักเรียน / วิชาเรียน-ตารางเรียน / รายชื่อครู)
+        function switchAdminTab(tabId) {
+            document.getElementById('admin-students-tab').classList.add('hidden');
+            document.getElementById('admin-subjects-tab').classList.add('hidden');
+            document.getElementById('admin-teachers-tab').classList.add('hidden');
+
+            document.getElementById('admin-btn-students-tab').className = "w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 text-slate-600 hover:bg-slate-50";
+            document.getElementById('admin-btn-subjects-tab').className = "w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 text-slate-600 hover:bg-slate-50";
+            document.getElementById('admin-btn-teachers-tab').className = "w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 text-slate-600 hover:bg-slate-50";
+
+            document.getElementById(`admin-${tabId}`).classList.remove('hidden');
+            document.getElementById(`admin-btn-${tabId}`).className = "w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 bg-purple-600 text-white shadow-md";
+
+            if (tabId === 'subjects-tab') {
+                renderAdminSubjectsTab();
+            }
+        }
+
+        // ฟังก์ชันจัดการตารางเรียนและหน่วยกิตรายวิชา (เรนเดอร์ UI ตามระดับชั้น ม.1 - ม.6 ที่เลือก)
+        function renderAdminSubjectsTab() {
+            const selectedGrade = document.getElementById('admin-grade-selector').value;
+            const classData = gradeSubjects[selectedGrade];
+
+            // อัปเดตข้อความหัวข้อประจำห้องเรียน
+            const labelEl = document.getElementById('admin-selected-grade-label');
+            if (labelEl) {
+                labelEl.innerText = `ม.${selectedGrade}`;
+            }
+
+            // ดึงข้อมูลลิงก์ปัจจุบันมาใส่ลงในช่องอินพุต
+            const linkInput = document.getElementById('admin-schedule-link-input');
+            if (linkInput) {
+                linkInput.value = classData ? classData.scheduleUrl : "";
+            }
+
+            // เรนเดอร์ฟิลด์จำนวนคาบและหน่วยกิตรายวิชา
+            const container = document.getElementById('admin-subjects-inputs-container');
+            if (container && classData) {
+                let inputsHtml = "";
+                for (let subName in classData.subjects) {
+                    const subMeta = classData.subjects[subName];
+                    inputsHtml += `
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60 flex flex-col justify-between hover:border-purple-300 transition-all shadow-sm">
+                            <span class="text-xs font-bold text-slate-800 truncate mb-2.5 block" title="${subName}">
+                                <i class="fa-solid fa-book text-purple-500 mr-1.5"></i>${subName}
+                            </span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-1">จำนวนคาบเรียน</label>
+                                    <input type="number" id="admin-sub-period-${subName}" min="1" max="200" required value="${subMeta.periods}" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:ring-1 focus:ring-purple-500 font-mono">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 mb-1">หน่วยกิต (Credits)</label>
+                                    <input type="number" step="0.5" id="admin-sub-credit-${subName}" min="0.5" max="10.0" required value="${subMeta.credits}" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:ring-1 focus:ring-purple-500 font-mono">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = inputsHtml;
+            }
+        }
+
+        // ฟังก์ชันทดสอบเปิดลิงก์ตารางเรียนในแท็บหลักสูตร
+        function testCurrentScheduleLink() {
+            const linkInput = document.getElementById('admin-schedule-link-input').value.trim();
+            if (linkInput) {
+                window.open(linkInput, '_blank');
+            } else {
+                showToast("กรุณาระบุ URL ลิงก์ตารางเรียนก่อนคลิกทดสอบ", "error");
+            }
+        }
+
+        // บันทึกการอัปเดตจำนวนคาบเรียนรวม หน่วยกิต และลิงก์ตารางเรียนของชั้นเรียน ม. ที่เลือก
+        function handleAdminUpdateSubjects(event) {
+            event.preventDefault();
+            const selectedGrade = document.getElementById('admin-grade-selector').value;
+            const linkInput = document.getElementById('admin-schedule-link-input').value.trim();
+
+            if (!gradeSubjects[selectedGrade]) return;
+
+            // รวบรวมค่าคาบเรียน/หน่วยกิตที่แก้ไขไว้ในฟอร์ม แล้วส่งไปบันทึกจริงที่ Google Sheets
+            const subjectsPayload = {};
+            for (let subName in gradeSubjects[selectedGrade].subjects) {
+                const periodsVal = parseInt(document.getElementById(`admin-sub-period-${subName}`).value);
+                const creditsVal = parseFloat(document.getElementById(`admin-sub-credit-${subName}`).value);
+                const current = gradeSubjects[selectedGrade].subjects[subName];
+
+                subjectsPayload[subName] = {
+                    periods: (!isNaN(periodsVal) && periodsVal > 0) ? periodsVal : current.periods,
+                    credits: (!isNaN(creditsVal) && creditsVal > 0) ? creditsVal : current.credits
+                };
+            }
+
+            callServer('updateGradeSubjectsApi', [selectedGrade, linkInput, subjectsPayload])
+                .then(function (state) {
+                    applyState(state);
+                    showToast(`บันทึกโครงสร้างหลักสูตร หน่วยกิต และตารางเรียนของ ม.${selectedGrade} เรียบร้อยแล้ว`, "success");
+                    renderData();
+                })
+                .catch(handleServerError);
+        }
+
+        // ซ่อน/แสดง ฟอร์มเพิ่มรายชื่อนักเรียนใหม่
+        function toggleAddStudentForm() {
+            const form = document.getElementById('admin-add-student-form-container');
+            form.classList.toggle('hidden');
+        }
+
+        // บันทึกการเพิ่มนักเรียนใหม่ (ฝ่ายแอดมิน)
+        function handleAdminAddStudent(event) {
+            event.preventDefault();
+            const name = document.getElementById('admin-new-name').value.trim();
+            const stdClass = document.getElementById('admin-new-class').value;
+            const stdId = document.getElementById('admin-new-id').value.trim();
+
+            if (!name || !stdId) {
+                showToast("กรุณากรอกข้อมูลนักเรียนใหม่ให้ครบถ้วน", "error");
+                return;
+            }
+
+            // การตรวจสอบรหัสซ้ำและการสร้างสถิติเวลาเรียนเริ่มต้น ทำที่ฝั่งเซิร์ฟเวอร์ (Code.gs)
+            // เพื่อป้องกันข้อมูลไม่ตรงกันหากมีแอดมินหลายคนใช้งานพร้อมกัน
+            callServer('addStudentApi', [stdId, name, stdClass])
+                .then(function (state) {
+                    applyState(state);
+                    showToast(`เพิ่มรายชื่อคุณ ${name} เข้าฐานข้อมูลทะเบียนเรียนสำเร็จ`, "success");
+                    document.getElementById('admin-new-name').value = "";
+                    document.getElementById('admin-new-id').value = "";
+                    toggleAddStudentForm();
+                    renderData();
+                })
+                .catch(function (err) {
+                    if (err && String(err.message || err).indexOf('DUPLICATE_ID') !== -1) {
+                        showToast(`รหัสประจำตัวนักเรียน ${stdId} มีในระบบทะเบียนอยู่แล้ว`, "error");
+                    } else {
+                        handleServerError(err);
+                    }
+                });
+        }
+
+        // ลบรายชื่อนักเรียนพ้นสภาพฐานข้อมูล (ฝ่ายแอดมิน)
+        function adminDeleteStudent(id, name) {
+            callServer('deleteStudentApi', [id])
+                .then(function (state) {
+                    applyState(state);
+                    showToast(`ลบชื่อและประวัติเวลาเรียนของ ${name} พ้นระบบแล้ว`, "success");
+                    renderData();
+                })
+                .catch(handleServerError);
+        }
+
+        // เรนเดอร์แผงควบคุมระบบแอดมินทั้งหมด
+        function renderAdminDashboard() {
+            // อัปเดตสถิติจำนวนนักเรียนในแผงผู้ดูแล
+            const adminStatTotal = document.getElementById('admin-stat-total-students');
+            if (adminStatTotal) {
+                adminStatTotal.innerText = studentsList.length;
+            }
+
+            // 1. เรนเดอร์ตารางสถิตินักเรียนในฐานข้อมูลแอดมิน (คำนวณตามหลักสูตร ม. ของแต่ละคน)
+            const tbody = document.getElementById('admin-students-table-body');
+            if (tbody) {
+                tbody.innerHTML = studentsList.map(s => {
+                    let sId = s.id;
+                    let sGrade = s.class || "6";
+                    let totalPeriods = 0;
+                    let attendedPeriods = 0;
+
+                    // ค้นหาโครงสร้างตามระดับชั้นของนักเรียน
+                    const classGradeData = gradeSubjects[sGrade] || gradeSubjects["6"];
+
+                    // คำนวณเปอร์เซ็นต์สะสมเฉลี่ยรวมตามระดับชั้นรายบุคคล
+                    if (studentAttendanceData[sId]) {
+                        for (let key in studentAttendanceData[sId]) {
+                            const subMeta = classGradeData.subjects[key] || { periods: 40, credits: 1.0 };
+                            let total = subMeta.periods;
+                            let leave = studentAttendanceData[sId][key].leave;
+                            let absent = studentAttendanceData[sId][key].absent;
+                            
+                            let subAttended = total - leave - absent;
+                            if (subAttended < 0) subAttended = 0;
+
+                            totalPeriods += total;
+                            attendedPeriods += subAttended;
+                        }
+                    }
+
+                    let percentage = totalPeriods > 0 ? (attendedPeriods / totalPeriods) * 100 : 100;
+                    
+                    let badgeClass = percentage >= 80 
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
+                        : "bg-rose-50 text-rose-700 border-rose-100 animate-pulse";
+                    let badgeText = percentage >= 80 ? "ผ่านเกณฑ์ดี" : "เสี่ยงขาดสอบ";
+
+                    return `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-4 py-3 font-mono font-bold text-slate-700">${sId}</td>
+                            <td class="px-4 py-3 font-semibold text-slate-800">${s.name}</td>
+                            <td class="px-4 py-3 text-slate-500 font-medium">ม.${s.class}</td>
+                            <td class="px-4 py-3 text-center font-mono font-black text-indigo-600">${percentage.toFixed(1)}%</td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}">
+                                    ${badgeText}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <button onclick="adminDeleteStudent('${sId}', '${s.name}')" class="text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-all" title="ลบชื่อจากระบบทะเบียน">
+                                    <i class="fa-solid fa-user-minus text-xs"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // 2. เรนเดอร์ทำเนียบรายชื่ออาจารย์ผู้สอน
+            const teacherTbody = document.getElementById('admin-teachers-table-body');
+            if (teacherTbody) {
+                teacherTbody.innerHTML = teachersList.map(t => `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-3 font-mono font-bold text-slate-500">${t.id}</td>
+                        <td class="px-6 py-3 font-semibold text-slate-800">${t.name}</td>
+                        <td class="px-6 py-3 font-medium text-slate-600"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-lg border border-indigo-100 text-xs">${t.subject}</span></td>
+                        <td class="px-6 py-3 text-center"><span class="text-emerald-600 font-bold"><i class="fa-solid fa-square-check mr-1"></i>พิจารณาและตรวจชื่อได้</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // ==================== [ฟังก์ชันดั้งเดิมที่จำเป็น] ====================
+
+        // ฟังก์ชันเปิด Modal เพื่อพรีวิวเอกสารหลักฐาน
+        function openDocumentModal(fileName) {
+            const modalFileName = document.getElementById('modal-file-name');
+            if (modalFileName) {
+                modalFileName.innerText = fileName || "ใบรับรองแพทย์ตรวจโรคทั่วไป.jpg";
+            }
+            const modal = document.getElementById('document-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        }
+
+        // ฟังก์ชันปิด Modal
+        function closeDocumentModal() {
+            const modal = document.getElementById('document-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // ฟังก์ชันสร้างระบบแจ้งเตือนแบบพรีเมียม (Toast Alert)
+        function showToast(message, type = "success") {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            // สร้าง Element ใหม่ขึ้นมา
+            const toast = document.createElement('div');
+            
+            let bgClass = "bg-emerald-50 border-emerald-200 text-emerald-800";
+            let icon = "fa-circle-check text-emerald-500";
+            
+            if (type === "error") {
+                bgClass = "bg-rose-50 border-rose-200 text-rose-800";
+                icon = "fa-circle-xmark text-rose-500";
+            } else if (type === "info") {
+                bgClass = "bg-indigo-50 border-indigo-200 text-indigo-800";
+                icon = "fa-circle-info text-indigo-500";
+            }
+
+            toast.className = `flex items-center space-x-3 p-4 rounded-xl border shadow-lg ${bgClass} transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-lg"></i>
+                <p class="text-xs font-semibold">${message}</p>
+            `;
+
+            container.appendChild(toast);
+
+            // เอฟเฟกต์ Fade-in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // ลบออกไปเองเมื่อครบเวลา 3.5 วินาที
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3500);
+        }
+
+        // เริ่มต้นเรียกใช้ฟังก์ชันเมื่อเปิดหน้าต่างขึ้นมา
+        window.onload = function() {
+            populateDayDropdowns();
+            loadAllData(function () { renderData(); });
+        };
+    </script>
+</body>
+</html>
